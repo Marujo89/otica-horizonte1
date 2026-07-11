@@ -1867,7 +1867,15 @@ function resetarSistema() {
 </div>
 <div class="divider"></div>
 <!-- LONGE -->
-<div style="background:#eff6ff;border-radius:8px;padding:12px;margin-top:8px;border-left:3px solid #3b82f6">
+<!-- Toggle Receita Óptica -->
+<div style="margin-top:8px">
+<div onclick="toggleOSReceita()" style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none">
+<span style="font-size:11px;font-weight:700;color:#1d4ed8">👁️ Receita Óptica (Longe / Perto)</span>
+<span id="os-receita-arrow" style="color:#1d4ed8;font-size:12px">▼</span>
+</div>
+<div id="os-receita-box" style="display:none;margin-top:4px">
+<!-- LONGE -->
+<div style="background:#eff6ff;border-radius:8px;padding:12px;margin-top:6px;border-left:3px solid #3b82f6">
 <div style="font-size:10px;font-weight:700;color:#1d4ed8;text-transform:uppercase;margin-bottom:8px">👁️ LONGE</div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
 <div><div style="font-size:11px;font-weight:700;color:#1d4ed8;margin-bottom:4px">OD</div>
@@ -1883,7 +1891,7 @@ function resetarSistema() {
 </div>
 </div>
 <!-- PERTO -->
-<div style="background:#f0fdf4;border-radius:8px;padding:12px;margin-top:8px;border-left:3px solid #10b981">
+<div style="background:#f0fdf4;border-radius:8px;padding:12px;margin-top:6px;border-left:3px solid #10b981">
 <div style="font-size:10px;font-weight:700;color:#065f46;text-transform:uppercase;margin-bottom:8px">👁️ PERTO</div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
 <div><div style="font-size:11px;font-weight:700;color:#065f46;margin-bottom:4px">OD</div>
@@ -1902,8 +1910,15 @@ function resetarSistema() {
 <label>Adição (ADD)</label>
 <input id="os-adicao" placeholder="ex: +2.50" step="0.25" type="number"/>
 </div>
-<div class="form-grid" style="margin-top:12px">
-<div class="form-group"><label>Valor Total (R$) *</label><input id="os-valor" placeholder="0.00" step="0.01" type="number"/></div>
+</div>
+</div>
+<!-- Descrição do Serviço + Valor + Status -->
+<div class="form-group" style="margin-top:10px">
+<label>📝 Descrição do Serviço</label>
+<textarea id="os-descricao" placeholder="Descreva o serviço a ser realizado..." rows="2" style="width:100%;resize:vertical"></textarea>
+</div>
+<div class="form-grid" style="margin-top:8px">
+<div class="form-group"><label>Valor Total (R$)</label><input id="os-valor" placeholder="0.00" step="0.01" type="number"/></div>
 <div class="form-group">
 <label>Status</label>
 <select id="os-status">
@@ -4018,7 +4033,7 @@ function viewOS(id) {
           ${o.tratamentos?o.tratamentos.split(', ').map(t=>`<span style="background:#dcfce7;color:#16a34a;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">✨ ${t}</span>`).join(''):''}
         </div>`:''}
         <button class="btn btn-success" onclick="imprimirOS('${o.id}')" data-tip="Imprimir OS">🖨️ Imprimir OS</button>
-        <button class="btn btn-primary" onclick="imprimirEtiquetaOS('${o.id}')" data-tip="Etiqueta para laboratório" style="background:#7c3aed">🏷️ Etiqueta</button>
+        
         <button class="btn btn-success" onclick="copiarMsgWhatsApp('${o.id}')" data-tip="Mensagem WhatsApp" style="background:#16a34a">📱 WhatsApp</button>
         <button class="btn btn-warning" onclick="atualizarStatusOS('${o.id}')">🔄 Status</button>
         <button class="btn btn-outline" onclick="closeModal('modal-view-os')">Fechar</button>
@@ -4080,13 +4095,25 @@ function editOS(id) {
   if (cobrEl) cobrEl.value = o.cobranca || (o.tipoOS==='montagem'?'montagem':'cobrado');
   document.getElementById('os-status').value = o.status||'Aberta';
   document.getElementById('os-obs').value = o.obs||'';
+  var descEl = document.getElementById('os-descricao');
+  if (descEl) descEl.value = o.descricao||'';
+  // Mostrar/ocultar receita conforme tipo
+  var receitaBox = document.getElementById('os-receita-box');
+  var receitaArrow = document.getElementById('os-receita-arrow');
+  var tipo = o.tipo||'';
+  var precisaReceita = tipo.includes('Montagem') || tipo.includes('Troca de Lente') || tipo.includes('Gradua');
+  if (receitaBox) { receitaBox.style.display = precisaReceita ? 'block' : 'none'; }
+  if (receitaArrow) receitaArrow.textContent = precisaReceita ? '▲' : '▼';
   openModal('modal-os');
 }
 
 function saveOS() {
   const clienteId = parseInt(document.getElementById('os-cliente').value);
   const valor = parseFloat(document.getElementById('os-valor').value)||0;
-  if (!clienteId || !valor) { showToast('Preencha cliente e valor!','error'); return; }
+  const tipoCobranca = (document.getElementById('os-cobranca')?.value||'cobrado');
+  const isMontagem = tipoCobranca === 'montagem';
+  if (!clienteId) { showToast('Selecione o cliente!','error'); return; }
+  if (!isMontagem && !valor) { showToast('Preencha o valor total!','error'); return; }
   const arr = load('os');
   const idx = document.getElementById('os-idx').value;
   const obj = {
@@ -4117,6 +4144,7 @@ function saveOS() {
     oeCil: parseFloat(document.getElementById('os-longe-oe-cil')?.value)||0,
     valor,
     status: document.getElementById('os-status').value,
+    descricao: (document.getElementById('os-descricao')?.value||'').trim(),
     obs: document.getElementById('os-obs').value,
   };
   if (idx) { const i=arr.findIndex(x=>x.id===idx); arr[i]=obj; } else arr.push(obj);
@@ -5916,13 +5944,29 @@ function imprimirReceita() {
 
 
 // ── TIPO DE OS ───────────────────────────────────────────────────
+function toggleOSReceita() {
+  var box = document.getElementById('os-receita-box');
+  var arrow = document.getElementById('os-receita-arrow');
+  if (!box) return;
+  var aberto = box.style.display !== 'none';
+  box.style.display = aberto ? 'none' : 'block';
+  if (arrow) arrow.textContent = aberto ? '▼' : '▲';
+}
+
 function onTipoOSChange() {
   const tipo = document.getElementById('os-tipo').value;
   const valorBox = document.getElementById('os-valor-box');
   const cobranca = document.getElementById('os-cobranca');
+  // Mostrar/ocultar receita óptica conforme tipo de OS
+  var receitaBox = document.getElementById('os-receita-box');
+  var receitaArrow = document.getElementById('os-receita-arrow');
+  var precisaReceita = tipo.includes('Montagem') || tipo.includes('Troca de Lente') || tipo.includes('Gradua');
+  if (receitaBox) {
+    receitaBox.style.display = precisaReceita ? 'block' : 'none';
+    if (receitaArrow) receitaArrow.textContent = precisaReceita ? '▲' : '▼';
+  }
   // Sugerir tipo de cobrança baseado no tipo de OS
   if (tipo.includes('Montagem')) {
-    // Montagem: valor já foi cobrado na venda
     if (cobranca) cobranca.value = 'cobrado';
   } else if (tipo.includes('Garantia') || tipo.includes('garantia')) {
     if (cobranca) cobranca.value = 'garantia';
