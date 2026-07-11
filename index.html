@@ -6511,17 +6511,24 @@ function atualizarPainelInterno(custoExtra, vendaExtra) {
   var userAtual = loadUser();
   var vendedorNome = (userAtual ? (userAtual.nome||'') : (document.getElementById('venda-vendedor')?.value||'')).trim().toLowerCase();
   // Mapear nome de exibição para chave de comissão
+  // "Administrador" → "admin", "Vendedor" → "vendedor"
   if (vendedorNome === 'administrador') vendedorNome = 'admin';
-  if (vendedorNome === 'vendedor') vendedorNome = 'vendedor';
-  var usuarios = load('clientes'); // busca % nos dados do usuário logado
-  // Busca comissão cadastrada no objeto USERS ou em configuração
+  // Buscar comissão: primeiro pelo nome do usuário logado, depois pelo login
   var pctComissao = 0;
-  if (window._comissaoVendedor && window._comissaoVendedor[vendedorNome] !== undefined) {
-    pctComissao = window._comissaoVendedor[vendedorNome];
+  var cfgComissao = window._comissaoVendedor || JSON.parse(localStorage.getItem('otica_config_comissao')||'{}');
+  // Garantir que _comissaoVendedor está inicializado com valores do USERS
+  if (!cfgComissao || Object.keys(cfgComissao).length === 0) {
+    cfgComissao = {admin: 0, vendedor: 5, default: 0};
+    window._comissaoVendedor = cfgComissao;
+    localStorage.setItem('otica_config_comissao', JSON.stringify(cfgComissao));
+  }
+  if (cfgComissao[vendedorNome] !== undefined) {
+    pctComissao = cfgComissao[vendedorNome];
+  } else if (userAtual && userAtual.comissao !== undefined) {
+    // Fallback: usar comissão salva no objeto do usuário logado
+    pctComissao = userAtual.comissao || 0;
   } else {
-    // Fallback: busca na config global
-    var cfg = JSON.parse(localStorage.getItem('otica_config_comissao')||'{}');
-    pctComissao = cfg[vendedorNome] || cfg['default'] || 0;
+    pctComissao = cfgComissao['default'] || 0;
   }
   var comissao = totalFinal * (pctComissao / 100);
 
