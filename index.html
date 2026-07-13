@@ -1042,9 +1042,6 @@ function instalarApp() {
 <div class="login-hint">
       👤 <strong>admin</strong> / admin123  |  👤 <strong>vendedor</strong> / venda123
     </div>
-<button onclick="resetarSistema()" style="margin-top:12px;width:100%;padding:9px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;color:#64748b;font-size:12px;cursor:pointer">
-      🔄 Problemas para entrar? Clique aqui para resetar
-    </button>
 </div>
 </div>
 <!-- ══════════════════════════════════════════════════════════════ -->
@@ -1077,6 +1074,9 @@ function instalarApp() {
 </div>
 </div>
 <nav class="sidebar-nav">
+<div class="nav-item" onclick="showSection('dashboard')">
+<span class="icon">📊</span> Dashboard
+      </div>
 <div class="nav-item" onclick="showSection('clientes')">
 <span class="icon">👥</span> Clientes
       </div>
@@ -1103,9 +1103,6 @@ function instalarApp() {
       </div>
 <div class="nav-item" onclick="showSection('relatorios')">
 <span class="icon">📈</span> Relatórios
-      </div>
-<div class="nav-item" onclick="showSection('dashboard')">
-<span class="icon">📊</span> Dashboard
       </div>
 <div class="nav-item" id="nav-usuarios" onclick="showSection('usuarios')" style="display:none">
 <span class="icon">👥</span> Usuários
@@ -1407,7 +1404,7 @@ function instalarApp() {
 <div class="topbar">
 <h1>🔧 Ordens de Serviço</h1>
 <div class="topbar-actions">
-<button class="btn btn-primary" onclick="openModal('modal-os')">➕ Nova OS</button>
+<button class="btn btn-primary" id="btn-nova-os" onclick="openModal('modal-os')">➕ Nova OS</button>
 </div>
 </div>
 <div class="cards-grid" id="os-cards"></div>
@@ -2869,6 +2866,59 @@ function instalarApp() {
 </div>
 </div>
 </div>
+<!-- Modal OS → Caixa -->
+<div class="modal-overlay" id="modal-os-caixa" style="display:none">
+<div class="modal" style="max-width:440px">
+<div class="modal-header">
+<h3>💰 Registrar Pagamento — OS de Conserto</h3>
+<button class="modal-close" onclick="closeModal('modal-os-caixa')">✕</button>
+</div>
+<div class="modal-body">
+<input id="os-caixa-id" type="hidden"/>
+<div id="os-caixa-info"></div>
+<div class="form-grid">
+<div class="form-group">
+<label>Data *</label>
+<input id="os-caixa-data" type="date"/>
+</div>
+<div class="form-group">
+<label>Forma de Pagamento *</label>
+<select id="os-caixa-pag">
+<option>Dinheiro</option>
+<option>PIX</option>
+<option>Cartão Crédito</option>
+<option>Cartão Débito</option>
+</select>
+</div>
+<div class="form-group">
+<label>Parcelas</label>
+<select id="os-caixa-parcelas">
+<option value="1">À vista</option>
+<option value="2">2x</option>
+<option value="3">3x</option>
+<option value="6">6x</option>
+<option value="12">12x</option>
+</select>
+</div>
+<div class="form-group">
+<label>Status</label>
+<select id="os-caixa-status">
+<option>Pago</option>
+<option>Pendente</option>
+</select>
+</div>
+<div class="form-group" style="grid-column:1/-1">
+<label>Vendedor</label>
+<input id="os-caixa-vendedor" placeholder="Nome do vendedor" type="text"/>
+</div>
+</div>
+<div class="form-actions">
+<button class="btn btn-success" onclick="confirmarOSCaixa()" style="background:var(--gradient-primary)">✅ Confirmar Pagamento</button>
+<button class="btn btn-outline" onclick="closeModal('modal-os-caixa')">Cancelar</button>
+</div>
+</div>
+</div>
+</div>
 <!-- Modal Configurações -->
 <div class="modal-overlay" id="modal-config" style="display:none">
 <div class="modal" style="max-width:480px">
@@ -3582,25 +3632,57 @@ function seedData() {
      odEsf:-4.50,odCil:-1.00,oeEsf:-4.25,oeCil:-0.75,adicao:2.0,dnp:31,obs:'Fotossensível indicado'},
   ]);
   save('produtos', [
-    {cod:'ARM-001',desc:'Armação Acetato Redonda',cat:'Armação',marca:'Ray-Ban',modelo:'RB5228',cor:'Preto',local:'Prateleira A1',qtd:15,min:5,custo:120,venda:320},
-    {cod:'ARM-002',desc:'Armação Metal Quadrada',cat:'Armação',marca:'Oakley',modelo:'OX3174',cor:'Prata',local:'Prateleira A2',qtd:8,min:5,custo:95,venda:280},
-    {cod:'ARM-003',desc:'Armação Titanium Oval',cat:'Armação',marca:'Silhouette',modelo:'SPX+',cor:'Dourado',local:'Prateleira A3',qtd:4,min:3,custo:280,venda:750},
-    {cod:'ARM-004',desc:'Armação Infantil Flexível',cat:'Armação',marca:'Miraflex',modelo:'A001',cor:'Azul',local:'Prateleira B1',qtd:12,min:5,custo:65,venda:180},
-    {cod:'LEN-001',desc:'Lente Monofocal CR39',cat:'Lente',marca:'Zeiss',modelo:'Vision',cor:'Incolor',local:'Estoque L1',qtd:50,min:20,custo:45,venda:120},
-    {cod:'LEN-002',desc:'Lente Bifocal Orgânica',cat:'Lente',marca:'Essilor',modelo:'Varilux',cor:'Incolor',local:'Estoque L2',qtd:30,min:10,custo:85,venda:220},
-    {cod:'LEN-003',desc:'Lente Progressiva Premium',cat:'Lente',marca:'Hoya',modelo:'Sync III',cor:'Incolor',local:'Estoque L3',qtd:20,min:8,custo:180,venda:480},
-    {cod:'LEN-004',desc:'Lente Fotossensível',cat:'Lente',marca:'Transitions',modelo:'Gen 8',cor:'Cinza',local:'Estoque L4',qtd:25,min:10,custo:120,venda:320},
-    {cod:'SOL-001',desc:'Óculos Solar Esportivo',cat:'Solar',marca:'Oakley',modelo:'Holbrook',cor:'Preto/Azul',local:'Vitrine S1',qtd:10,min:4,custo:150,venda:420},
-    {cod:'SOL-002',desc:'Óculos Solar Feminino',cat:'Solar',marca:'Ray-Ban',modelo:'RB4171',cor:'Tartaruga',local:'Vitrine S2',qtd:7,min:4,custo:130,venda:380},
+    // ── ARMAÇÕES PARA ÓCULOS DE GRAU ──
+    {cod:'ARM-001',desc:'Armação Acetato Redonda Clássica',cat:'Armação',marca:'Ray-Ban',modelo:'RB5228',cor:'Preto',local:'Prateleira A1',qtd:15,min:5,custo:120,venda:320},
+    {cod:'ARM-002',desc:'Armação Metal Quadrada Slim',cat:'Armação',marca:'Oakley',modelo:'OX3174',cor:'Prata',local:'Prateleira A2',qtd:8,min:5,custo:95,venda:280},
+    {cod:'ARM-003',desc:'Armação Titanium Oval Ultraleve',cat:'Armação',marca:'Silhouette',modelo:'SPX+',cor:'Dourado',local:'Prateleira A3',qtd:4,min:3,custo:280,venda:750},
+    {cod:'ARM-004',desc:'Armação Acetato Gatinho Feminina',cat:'Armação',marca:'Guess',modelo:'GU2785',cor:'Tartaruga',local:'Prateleira A4',qtd:10,min:4,custo:110,venda:290},
+    {cod:'ARM-005',desc:'Armação Metal Aviador Masculina',cat:'Armação',marca:'Carrera',modelo:'CA8837',cor:'Dourado/Verde',local:'Prateleira A5',qtd:6,min:3,custo:130,venda:350},
+    {cod:'ARM-006',desc:'Armação Acetato Quadrada Unissex',cat:'Armação',marca:'Prada',modelo:'PR01YV',cor:'Preto Fosco',local:'Prateleira A6',qtd:5,min:3,custo:200,venda:520},
+    {cod:'ARM-007',desc:'Armação Flexível TR90 Masculina',cat:'Armação',marca:'Speedo',modelo:'SP4060',cor:'Azul',local:'Prateleira B1',qtd:12,min:5,custo:75,venda:199},
+    {cod:'ARM-008',desc:'Armação Acetato Oval Feminina',cat:'Armação',marca:'Vogue',modelo:'VO5105',cor:'Rosa/Dourado',local:'Prateleira B2',qtd:9,min:4,custo:90,venda:240},
+    {cod:'ARM-009',desc:'Armação Infantil Flexível Menino',cat:'Armação',marca:'Miraflex',modelo:'A001',cor:'Azul',local:'Prateleira C1',qtd:12,min:5,custo:65,venda:180},
+    {cod:'ARM-010',desc:'Armação Infantil Flexível Menina',cat:'Armação',marca:'Miraflex',modelo:'A002',cor:'Rosa',local:'Prateleira C2',qtd:10,min:5,custo:65,venda:180},
+    {cod:'ARM-011',desc:'Armação Infantil Acetato Colorida',cat:'Armação',marca:'Disney',modelo:'DY5001',cor:'Vermelho',local:'Prateleira C3',qtd:8,min:4,custo:55,venda:160},
+    // ── LENTES ──
+    {cod:'LEN-001',desc:'Lente Visão Simples CR39',cat:'Lente',marca:'Zeiss',modelo:'Vision',cor:'Incolor',local:'Estoque L1',qtd:50,min:20,custo:45,venda:120},
+    {cod:'LEN-002',desc:'Lente Visão Simples Orgânica',cat:'Lente',marca:'Essilor',modelo:'Orma',cor:'Incolor',local:'Estoque L2',qtd:40,min:15,custo:60,venda:160},
+    {cod:'LEN-003',desc:'Lente Bifocal Kriptok',cat:'Lente',marca:'Hoya',modelo:'Bifocal',cor:'Incolor',local:'Estoque L3',qtd:20,min:8,custo:85,venda:220},
+    {cod:'LEN-004',desc:'Lente Progressiva Standard',cat:'Lente',marca:'Essilor',modelo:'Varilux S',cor:'Incolor',local:'Estoque L4',qtd:25,min:8,custo:150,venda:380},
+    {cod:'LEN-005',desc:'Lente Progressiva Premium',cat:'Lente',marca:'Hoya',modelo:'Sync III',cor:'Incolor',local:'Estoque L5',qtd:20,min:8,custo:180,venda:480},
+    {cod:'LEN-006',desc:'Lente Progressiva Digital',cat:'Lente',marca:'Zeiss',modelo:'Progressive',cor:'Incolor',local:'Estoque L6',qtd:15,min:5,custo:250,venda:650},
+    {cod:'LEN-007',desc:'Lente Fotossensível Cinza',cat:'Lente',marca:'Transitions',modelo:'Gen 8',cor:'Cinza',local:'Estoque L7',qtd:25,min:10,custo:120,venda:320},
+    {cod:'LEN-008',desc:'Lente Fotossensível Marrom',cat:'Lente',marca:'Transitions',modelo:'Gen 8',cor:'Marrom',local:'Estoque L8',qtd:20,min:8,custo:120,venda:320},
+    {cod:'LEN-009',desc:'Lente Anti-Reflexo Blue Cut',cat:'Lente',marca:'Crizal',modelo:'Blue UV',cor:'Incolor',local:'Estoque L9',qtd:30,min:10,custo:95,venda:250},
+    {cod:'LEN-010',desc:'Lente Alta Índice 1.67',cat:'Lente',marca:'Zeiss',modelo:'Hi-Index',cor:'Incolor',local:'Estoque L10',qtd:15,min:5,custo:200,venda:520},
+    // ── ÓCULOS SOLAR MASCULINO ──
+    {cod:'SOL-M01',desc:'Óculos Solar Esportivo Masculino',cat:'Solar',marca:'Oakley',modelo:'Holbrook',cor:'Preto/Azul',local:'Vitrine S1',qtd:10,min:4,custo:150,venda:420},
+    {cod:'SOL-M02',desc:'Óculos Solar Aviador Masculino',cat:'Solar',marca:'Ray-Ban',modelo:'RB3025',cor:'Dourado/Verde',local:'Vitrine S2',qtd:8,min:3,custo:160,venda:450},
+    {cod:'SOL-M03',desc:'Óculos Solar Quadrado Masculino',cat:'Solar',marca:'Carrera',modelo:'CA8037',cor:'Preto Fosco',local:'Vitrine S3',qtd:6,min:3,custo:130,venda:360},
+    {cod:'SOL-M04',desc:'Óculos Solar Esportivo Polarizado',cat:'Solar',marca:'Speedo',modelo:'SP570',cor:'Preto/Vermelho',local:'Vitrine S4',qtd:8,min:3,custo:110,venda:299},
+    // ── ÓCULOS SOLAR FEMININO ──
+    {cod:'SOL-F01',desc:'Óculos Solar Gatinho Feminino',cat:'Solar',marca:'Ray-Ban',modelo:'RB4171',cor:'Tartaruga',local:'Vitrine S5',qtd:7,min:3,custo:130,venda:380},
+    {cod:'SOL-F02',desc:'Óculos Solar Oversized Feminino',cat:'Solar',marca:'Guess',modelo:'GU7611',cor:'Rosa/Dourado',local:'Vitrine S6',qtd:6,min:3,custo:120,venda:340},
+    {cod:'SOL-F03',desc:'Óculos Solar Redondo Feminino',cat:'Solar',marca:'Vogue',modelo:'VO5105S',cor:'Nude/Dourado',local:'Vitrine S7',qtd:5,min:3,custo:110,venda:310},
+    {cod:'SOL-F04',desc:'Óculos Solar Borboleta Feminino',cat:'Solar',marca:'Prada',modelo:'PR17WS',cor:'Preto/Prata',local:'Vitrine S8',qtd:4,min:2,custo:200,venda:560},
+    // ── ÓCULOS SOLAR INFANTIL ──
+    {cod:'SOL-I01',desc:'Óculos Solar Infantil Menino',cat:'Solar',marca:'Juliet',modelo:'JU001',cor:'Azul',local:'Vitrine S9',qtd:10,min:4,custo:45,venda:120},
+    {cod:'SOL-I02',desc:'Óculos Solar Infantil Menina',cat:'Solar',marca:'Juliet',modelo:'JU002',cor:'Rosa',local:'Vitrine S10',qtd:10,min:4,custo:45,venda:120},
+    {cod:'SOL-I03',desc:'Óculos Solar Infantil Unissex',cat:'Solar',marca:'Disney',modelo:'DY9001',cor:'Colorido',local:'Vitrine S11',qtd:8,min:4,custo:50,venda:130},
+    // ── ACESSÓRIOS ──
     {cod:'ACE-001',desc:'Estojo Rígido Premium',cat:'Acessório',marca:'Genérico',modelo:'-',cor:'Preto',local:'Gaveta AC1',qtd:40,min:15,custo:12,venda:35},
     {cod:'ACE-002',desc:'Pano de Limpeza Microfibra',cat:'Acessório',marca:'Genérico',modelo:'-',cor:'Azul',local:'Gaveta AC2',qtd:100,min:30,custo:2,venda:8},
-    {cod:'ACE-003',desc:'Solução Limpeza Lentes',cat:'Acessório',marca:'Zeiss',modelo:'Spray',cor:'Incolor',local:'Gaveta AC3',qtd:35,min:15,custo:8,venda:22},
+    {cod:'ACE-003',desc:'Solução Limpeza Lentes 120ml',cat:'Acessório',marca:'Zeiss',modelo:'Spray',cor:'Incolor',local:'Gaveta AC3',qtd:35,min:15,custo:8,venda:22},
+    {cod:'ACE-004',desc:'Cordão para Óculos',cat:'Acessório',marca:'Genérico',modelo:'-',cor:'Preto',local:'Gaveta AC4',qtd:50,min:20,custo:3,venda:12},
+    {cod:'ACE-005',desc:'Estojo Flexível',cat:'Acessório',marca:'Genérico',modelo:'-',cor:'Sortido',local:'Gaveta AC5',qtd:30,min:10,custo:8,venda:25},
+    // ── LENTES DE CONTATO ──
     {cod:'CON-001',desc:'Lente de Contato Mensal',cat:'Contato',marca:'Acuvue',modelo:'Oasys',cor:'Incolor',local:'Estoque LC1',qtd:45,min:15,custo:35,venda:95},
     {cod:'CON-002',desc:'Lente de Contato Diária',cat:'Contato',marca:'Dailies',modelo:'Total1',cor:'Incolor',local:'Estoque LC2',qtd:30,min:10,custo:55,venda:140},
+    {cod:'CON-003',desc:'Lente de Contato Colorida Mensal',cat:'Contato',marca:'FreshLook',modelo:'Colorblends',cor:'Mel',local:'Estoque LC3',qtd:20,min:8,custo:40,venda:110},
   ]);
   // Clientes de teste adicionais
   var clientesExistentes = load('clientes');
-  if (clientesExistentes.length < 7) {
+  if (clientesExistentes.length < 0) { // Clientes zerados para testes reais
     clientesExistentes.push(
       {id:6,nome:'Roberto Andrade',cpf:'678.901.234-55',tel:'(11) 98765-4321',email:'roberto@email.com',nasc:'1980-03-20',end:'Rua das Palmeiras, 456',cidade:'São Paulo',convenio:'Unimed',status:'Ativo',cadastro:'2026-01-15',ultimaCompra:'',totalGasto:0},
       {id:7,nome:'Patrícia Mendes',cpf:'789.012.345-66',tel:'(21) 97654-3210',email:'patricia@email.com',nasc:'1992-07-08',end:'Av. Atlântica, 789',cidade:'Rio de Janeiro',convenio:'',status:'Ativo',cadastro:'2026-02-20',ultimaCompra:'',totalGasto:0}
@@ -3609,7 +3691,7 @@ function seedData() {
   }
   // Receitas de teste adicionais
   var receitasExistentes = load('receitas');
-  if (receitasExistentes.length < 5) {
+  if (receitasExistentes.length < 0) { // Receitas zeradas para testes reais
     receitasExistentes.push(
       {id:4,clienteId:6,medico:'Dr. Paulo Salave',data:'2026-06-15',validade:'2027-06-15',
        longeOdEsf:-1.75,longeOdCil:-0.50,longeOdEixo:90,longeOeEsf:-2.00,longeOeCil:-0.75,longeOeEixo:85,
@@ -3623,20 +3705,8 @@ function seedData() {
     save('receitas', receitasExistentes);
   }
 
-  save('vendas', [
-    {id:'V-0001',data:'2025-06-01',clienteId:5,produto:'LEN-003',qtd:2,preco:480,desc:5,pag:'Cartão Crédito',parcelas:3,status:'Pago',vendedor:'Vendedor 1'},
-    {id:'V-0002',data:'2025-06-02',clienteId:1,produto:'ARM-001',qtd:1,preco:320,desc:0,pag:'PIX',parcelas:1,status:'Pago',vendedor:'Vendedor 2'},
-    {id:'V-0003',data:'2025-06-03',clienteId:3,produto:'SOL-001',qtd:1,preco:420,desc:10,pag:'Dinheiro',parcelas:1,status:'Pago',vendedor:'Vendedor 1'},
-    {id:'V-0004',data:'2025-06-05',clienteId:2,produto:'ARM-002',qtd:1,preco:280,desc:5,pag:'PIX',parcelas:1,status:'Pago',vendedor:'Vendedor 3'},
-    {id:'V-0005',data:'2025-06-10',clienteId:5,produto:'LEN-004',qtd:2,preco:320,desc:10,pag:'Cartão Crédito',parcelas:6,status:'Pago',vendedor:'Vendedor 1'},
-  ]);
-  save('os', [
-    {id:'OS-0001',abertura:'2025-06-01',previsao:'2025-06-05',entrega:'2025-06-05',clienteId:1,tipo:'Óculos de Grau',armacao:'ARM-001',tecnico:'Técnico João',odEsf:-2.25,odCil:-0.50,oeEsf:-2.00,oeCil:-0.25,valor:440,status:'Entregue',obs:''},
-    {id:'OS-0002',abertura:'2025-06-03',previsao:'2025-06-08',entrega:'2025-06-08',clienteId:3,tipo:'Óculos de Grau',armacao:'ARM-003',tecnico:'Técnico Maria',odEsf:-3.00,odCil:-0.75,oeEsf:-2.75,oeCil:-0.50,valor:1230,status:'Entregue',obs:'Lente progressiva'},
-    {id:'OS-0003',abertura:'2025-06-12',previsao:'2025-06-17',entrega:'',clienteId:5,tipo:'Óculos de Grau',armacao:'ARM-003',tecnico:'Técnico João',odEsf:-4.75,odCil:-1.00,oeEsf:-4.50,oeCil:-0.75,valor:1480,status:'Em Produção',obs:'Aguardando lente'},
-    {id:'OS-0004',abertura:'2025-06-14',previsao:'2025-06-19',entrega:'',clienteId:2,tipo:'Troca de Lente',armacao:'ARM-002',tecnico:'Técnico Maria',odEsf:-1.50,odCil:0,oeEsf:-1.75,oeCil:-0.25,valor:280,status:'Aguardando Retirada',obs:'Pronto para entrega'},
-    {id:'OS-0005',abertura:'2025-06-20',previsao:'2025-06-25',entrega:'',clienteId:4,tipo:'Ajuste de Armação',armacao:'-',tecnico:'Técnico Pedro',odEsf:0,odCil:0,oeEsf:0,oeCil:0,valor:50,status:'Aberta',obs:''},
-  ]);
+  save('vendas', []); // Vendas zeradas para testes reais
+  save('os', []); // OS zeradas para testes reais
 }
 
 // ── Auth ─────────────────────────────────────────────────────────
@@ -3699,7 +3769,11 @@ function doLogin() {
   if (navU) navU.style.display = userObj.nivel==='Admin' ? 'flex' : 'none';
 
   seedData();
-  showSection('clientes');
+  aplicarControleAcesso();
+  // Ocultar botão Nova OS para vendedor
+  var btnNovaOS = document.getElementById('btn-nova-os');
+  if (btnNovaOS) btnNovaOS.style.display = isAdmin() ? '' : 'none';
+  showSection('dashboard');
   initDark();
   checkOSAtrasadas();
   seedAgendamentos();
@@ -3729,7 +3803,7 @@ function showSection(id) {
   if (!secEl) { console.error('Seção não encontrada: sec-'+id); return; }
   secEl.classList.add('active');
   const items = document.querySelectorAll('.nav-item');
-  const map = {clientes:0,receitas:1,vendas:2,os:3,produtos:4,agendamentos:5,comissoes:6,despesas:7,relatorios:8,dashboard:9,usuarios:10};
+  const map = {dashboard:0,clientes:1,receitas:2,vendas:3,os:4,produtos:5,agendamentos:6,comissoes:7,despesas:8,relatorios:9,usuarios:10};
   if (map[id] !== undefined) items[map[id]].classList.add('active');
   const renders = {dashboard:renderDashboard,clientes:renderClientes,receitas:renderReceitas,produtos:renderProdutos,vendas:renderVendas,os:renderOS,relatorios:renderRelatorios,agendamentos:renderAgendamentos,comissoes:renderComissoes,despesas:renderDespesas,usuarios:renderUsuarios};
   if (renders[id]) { try { renders[id](); } catch(e) { console.error('Erro ao renderizar '+id+':', e); showToast('Erro ao carregar: '+e.message,'error'); } }
@@ -3956,6 +4030,30 @@ function checkEstoqueAlert() {
 }
 
 // ── CLIENTES ─────────────────────────────────────────────────────
+// ── CONTROLE DE ACESSO ────────────────────────────────────────────────────
+function isAdmin() {
+  var u = loadUser();
+  return u && (u.nivel === 'Admin' || u.nome === 'Administrador');
+}
+
+function isVendedor() {
+  return !isAdmin();
+}
+
+// Aplicar controle de acesso em todos os módulos
+function aplicarControleAcesso() {
+  var admin = isAdmin();
+  var modulosSoAdmin = ['produtos','despesas','usuarios'];
+
+  // Ocultar módulos exclusivos do admin para vendedor
+  modulosSoAdmin.forEach(function(mod) {
+    document.querySelectorAll('.nav-item').forEach(function(el) {
+      var oc = el.getAttribute('onclick') || '';
+      if (oc.indexOf(mod) !== -1) el.style.display = admin ? '' : 'none';
+    });
+  });
+}
+
 function renderClientes() {
   if(!document.getElementById('tb-clientes')) return;
   const q = (document.getElementById('search-clientes')||{}).value||'';
@@ -3973,7 +4071,7 @@ function renderClientes() {
       <td><div class="flex gap-2">
         <button class="btn btn-sm btn-info" onclick="verHistorico(${c.id})" style="background:#0ea5e9;color:white" data-tip="Ver histórico do cliente">🔍</button>
         <button class="btn btn-sm btn-outline" onclick="editCliente(${c.id})" data-tip="Editar cliente">✏️</button>
-        <button class="btn btn-sm btn-danger" onclick="delCliente(${c.id})" data-tip="Excluir cliente">🗑️</button>
+        ${isAdmin()?`<button class="btn btn-sm btn-danger" onclick="delCliente(${c.id})" data-tip="Excluir cliente">🗑️</button>`:''}
       </div></td>
     </tr>`).join('') : '<tr><td colspan="9" class="text-center" style="padding:30px;color:var(--text-muted)">Nenhum cliente encontrado</td></tr>';
 }
@@ -4080,7 +4178,7 @@ function renderReceitas() {
       <td><div class="flex gap-2">
         <button class="btn btn-sm btn-info" onclick="verReceita(${r.id})" style="background:#0ea5e9;color:white" data-tip="Visualizar receita">👁️</button>
         <button class="btn btn-sm btn-outline" onclick="editReceita(${r.id})" data-tip="Editar receita">✏️</button>
-        <button class="btn btn-sm btn-danger" onclick="delReceita(${r.id})" data-tip="Excluir receita">🗑️</button>
+        ${isAdmin()?`<button class="btn btn-sm btn-danger" onclick="delReceita(${r.id})" data-tip="Excluir receita">🗑️</button>`:''}
       </div></td>
     </tr>`;}).join('') : '<tr><td colspan="10" class="text-center" style="padding:30px;color:var(--text-muted)">Nenhuma receita encontrada</td></tr>';
 }
@@ -4414,7 +4512,7 @@ function renderVendas() {
         <div class="flex gap-2">
           <button class="btn btn-sm btn-success" onclick="event.stopPropagation();imprimirRecibo('${primeiro.id}')" data-tip="Imprimir recibo">🖨️</button>
           ${temMultiplos?`<button class="btn btn-sm btn-outline" onclick="event.stopPropagation();toggleGrupo('${grupoId}')" data-tip="Ver/ocultar itens" style="font-size:11px">▼</button>`:''}
-          <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();delVendaGrupo('${chave}')" data-tip="Excluir venda">🗑️</button>
+          ${isAdmin()?`<button class="btn btn-sm btn-danger" onclick="event.stopPropagation();delVendaGrupo('${chave}')" data-tip="Excluir venda">🗑️</button>`:''}
         </div>
       </td>
     </tr>`;
@@ -4639,27 +4737,8 @@ function saveVenda() {
     window._orcamentoFechando = null;
   }
 
-  closeModal('modal-orcamento-venda');
-  closeModal('modal-venda');
-  renderVendas();
-
-  var msg = vendasCriadas.length === 1
-    ? 'Venda ' + vendasCriadas[0] + ' registrada! Total: ' + fmtMoney(totalGeral)
-    : vendasCriadas.length + ' vendas registradas! Total: ' + fmtMoney(totalGeral);
-  if (osGeradas.length > 0) {
-    msg += '\n🔧 OS de Montagem criada: ' + osGeradas.join(', ');
-    msg += '\nAcesse Ordens de Serviço para preencher os graus da receita.';
-  }
-  showToast(msg.split('\n')[0]);
-  if (osGeradas.length > 0) {
-    setTimeout(() => {
-      if (confirm('✅ Venda registrada!\n\n🔧 OS de Montagem criada: ' + osGeradas.join(', ') + '\n\nDeseja ir para Ordens de Serviço para preencher os graus?')) {
-        showSection('os');
-      }
-    }, 500);
-  }
+  window._saveVendaEmAndamento = false;
 }
-
 
 function delVenda(id) {
   if (!confirm('Excluir esta venda?')) return;
@@ -4883,49 +4962,63 @@ function atualizarStatusOS(id) {
 function editOS(id) {
   const o = load('os').find(x=>x.id===id);
   if (!o) return;
-  populateClienteSelect('os-cliente');
+  const isMontagem = o.tipoOS === 'montagem';
+
   document.getElementById('os-idx').value = id;
-  document.getElementById('modal-os-title').textContent = '✏️ Editar OS';
+  document.getElementById('modal-os-title').textContent = isMontagem ? '🔬 Editar OS de Montagem' : '🔧 Editar OS de Conserto';
+
+  // Campos comuns
+  populateClienteSelect('os-cliente');
   document.getElementById('os-cliente').value = o.clienteId;
+  document.getElementById('os-cliente').disabled = true; // não muda cliente
   document.getElementById('os-tipo').value = o.tipo;
+  document.getElementById('os-tipo').disabled = isMontagem; // não muda tipo em montagem
   document.getElementById('os-armacao').value = o.armacao||'';
   document.getElementById('os-tecnico').value = o.tecnico||'';
   document.getElementById('os-abertura').value = o.abertura||'';
   document.getElementById('os-previsao').value = o.previsao||'';
-        var setOsEl=function(id,val){var el=document.getElementById(id);if(el)el.value=val||'';};
-        setOsEl('os-longe-od-esf',o.longeOdEsf||o.odEsf||'');
-        setOsEl('os-longe-od-cil',o.longeOdCil||o.odCil||'');
-        setOsEl('os-longe-od-eixo',o.longeOdEixo||'');
-        setOsEl('os-longe-oe-esf',o.longeOeEsf||o.oeEsf||'');
-        setOsEl('os-longe-oe-cil',o.longeOeCil||o.oeCil||'');
-        setOsEl('os-longe-oe-eixo',o.longeOeEixo||'');
-        setOsEl('os-perto-od-esf',o.pertoOdEsf||'');
-        setOsEl('os-perto-od-cil',o.pertoOdCil||'');
-        setOsEl('os-perto-od-eixo',o.pertoOdEixo||'');
-        setOsEl('os-perto-oe-esf',o.pertoOeEsf||'');
-        setOsEl('os-perto-oe-cil',o.pertoOeCil||'');
-        setOsEl('os-perto-oe-eixo',o.pertoOeEixo||'');
-        setOsEl('os-adicao',o.adicao||'');
-  var valorEl2 = document.getElementById('os-valor');
-  if (valorEl2) {
-    valorEl2.value = o.valor||0;
-    valorEl2.disabled = o.tipoOS === 'montagem';
-    valorEl2.style.background = o.tipoOS === 'montagem' ? '#f1f5f9' : '';
-    valorEl2.style.color = o.tipoOS === 'montagem' ? '#94a3b8' : '';
-  }
-  var cobrEl = document.getElementById('os-cobranca');
-  if (cobrEl) cobrEl.value = o.cobranca || (o.tipoOS==='montagem'?'montagem':'cobrado');
   document.getElementById('os-status').value = o.status||'Aberta';
   document.getElementById('os-obs').value = o.obs||'';
+
   var descEl = document.getElementById('os-descricao');
-  if (descEl) descEl.value = o.descricao||'';
-  // Mostrar/ocultar receita conforme tipo
+  if (descEl) {
+    descEl.value = o.descricao||'';
+    // Descrição só para conserto
+    descEl.closest('.form-group') && (descEl.closest('.form-group').style.display = isMontagem ? 'none' : '');
+  }
+
+  // Valor — ocultar para montagem
+  var valorGroup = document.getElementById('os-valor')?.closest('.form-group');
+  if (valorGroup) valorGroup.style.display = isMontagem ? 'none' : '';
+  var valorEl2 = document.getElementById('os-valor');
+  if (valorEl2) { valorEl2.value = o.valor||0; }
+
+  // Receita óptica — mostrar para montagem expandida, ocultar para conserto simples
   var receitaBox = document.getElementById('os-receita-box');
   var receitaArrow = document.getElementById('os-receita-arrow');
-  var tipo = o.tipo||'';
-  var precisaReceita = tipo.includes('Montagem') || tipo.includes('Troca de Lente') || tipo.includes('Gradua');
-  if (receitaBox) { receitaBox.style.display = precisaReceita ? 'block' : 'none'; }
-  if (receitaArrow) receitaArrow.textContent = precisaReceita ? '▲' : '▼';
+  if (isMontagem) {
+    // Preencher graus
+    var setOsEl=function(elId,val){var el=document.getElementById(elId);if(el)el.value=val||'';};
+    setOsEl('os-longe-od-esf',o.longeOdEsf||o.odEsf||'');
+    setOsEl('os-longe-od-cil',o.longeOdCil||o.odCil||'');
+    setOsEl('os-longe-od-eixo',o.longeOdEixo||'');
+    setOsEl('os-longe-oe-esf',o.longeOeEsf||o.oeEsf||'');
+    setOsEl('os-longe-oe-cil',o.longeOeCil||o.oeCil||'');
+    setOsEl('os-longe-oe-eixo',o.longeOeEixo||'');
+    setOsEl('os-perto-od-esf',o.pertoOdEsf||'');
+    setOsEl('os-perto-od-cil',o.pertoOdCil||'');
+    setOsEl('os-perto-od-eixo',o.pertoOdEixo||'');
+    setOsEl('os-perto-oe-esf',o.pertoOeEsf||'');
+    setOsEl('os-perto-oe-cil',o.pertoOeCil||'');
+    setOsEl('os-perto-oe-eixo',o.pertoOeEixo||'');
+    setOsEl('os-adicao',o.adicao||'');
+    if (receitaBox) receitaBox.style.display = 'block';
+    if (receitaArrow) receitaArrow.textContent = '▲';
+  } else {
+    if (receitaBox) receitaBox.style.display = 'none';
+    if (receitaArrow) receitaArrow.textContent = '▼';
+  }
+
   openModal('modal-os');
 }
 
@@ -5546,7 +5639,7 @@ function renderAgendamentos() {
       <td><div class="flex gap-2">
         <button class="btn btn-sm btn-outline" onclick="editAgendamento(${a.id})" data-tip="Editar agendamento">✏️</button>
         <button class="btn btn-sm btn-success" onclick="confirmarAgend(${a.id})" data-tip="Confirmar/Realizar">✅</button>
-        <button class="btn btn-sm btn-danger" onclick="delAgendamento(${a.id})" data-tip="Excluir agendamento">🗑️</button>
+        ${isAdmin()?`<button class="btn btn-sm btn-danger" onclick="delAgendamento(${a.id})" data-tip="Excluir agendamento">🗑️</button>`:''}
       </div></td>
     </tr>`;
   }).join('') : '<tr><td colspan="9" class="text-center" style="padding:30px;color:var(--text-muted)">Nenhum agendamento encontrado</td></tr>';
@@ -5868,12 +5961,47 @@ function converterOSemVenda(id) {
   if (!o) return;
   if (o.tipoOS === 'montagem') { showToast('OS de montagem já está vinculada a uma venda!','warning'); return; }
   if (!o.valor || o.valor <= 0) { showToast('Defina o valor da OS antes de converter!','warning'); return; }
-  if (!confirm('Converter OS '+id+' em Venda?\nCliente: '+(Object.fromEntries(load('clientes').map(c=>[c.id,c.nome]))[o.clienteId]||'—')+'\nValor: '+fmtMoney(o.valor))) return;
+
+  var clMap = Object.fromEntries(load('clientes').map(c=>[c.id,c.nome]));
+  var nomeCliente = clMap[o.clienteId]||'—';
+
+  // Abrir modal de caixa para registrar pagamento
+  openModal('modal-os-caixa');
+
+  // Preencher dados no modal
+  document.getElementById('os-caixa-id').value = id;
+  document.getElementById('os-caixa-info').innerHTML =
+    `<div style="background:#f0f4ff;border-radius:10px;padding:12px;margin-bottom:14px;border-left:3px solid #c9a84c">
+      <div style="font-size:11px;color:#5a6a8a;margin-bottom:4px">OS de Conserto</div>
+      <div style="font-weight:700;color:#0d2b4e;font-size:15px">${o.id} — ${o.tipo}</div>
+      <div style="font-size:13px;color:#5a6a8a;margin-top:4px">Cliente: <strong>${nomeCliente}</strong></div>
+      ${o.descricao?`<div style="font-size:12px;color:#5a6a8a;margin-top:2px">Serviço: ${o.descricao}</div>`:''}
+      <div style="font-size:18px;font-weight:800;color:#16a34a;margin-top:8px">${fmtMoney(o.valor)}</div>
+    </div>`;
+  document.getElementById('os-caixa-data').value = new Date().toISOString().slice(0,10);
+  document.getElementById('os-caixa-pag').value = 'Dinheiro';
+  document.getElementById('os-caixa-parcelas').value = '1';
+  document.getElementById('os-caixa-status').value = 'Pago';
+  var vendEl = document.getElementById('os-caixa-vendedor');
+  if (vendEl) vendEl.value = loadUser()?.nome||'';
+}
+
+function confirmarOSCaixa() {
+  var id = document.getElementById('os-caixa-id').value;
+  var o = load('os').find(x=>x.id===id);
+  if (!o) return;
+
+  var pag = document.getElementById('os-caixa-pag').value;
+  var parcelas = document.getElementById('os-caixa-parcelas').value;
+  var status = document.getElementById('os-caixa-status').value;
+  var data = document.getElementById('os-caixa-data').value;
+  var vendedor = document.getElementById('os-caixa-vendedor')?.value||loadUser()?.nome||'';
+
   var arr = load('vendas');
   var venda = {
     id: nextCode(arr,'V'),
     grupoVenda: 'GV-'+Date.now(),
-    data: new Date().toISOString().slice(0,10),
+    data,
     clienteId: o.clienteId,
     produto: 'SERVICO',
     descricaoCompleta: '🔧 '+o.tipo+(o.descricao?' — '+o.descricao:''),
@@ -5883,33 +6011,48 @@ function converterOSemVenda(id) {
     descGlobal: 0,
     totalReal: o.valor,
     tipo: 'servico',
-    pag: 'Dinheiro',
-    parcelas: 1,
-    status: 'Pago',
-    vendedor: loadUser()?.nome||'',
+    pag, parcelas, status, vendedor,
     osRef: id,
   };
   arr.push(venda);
   save('vendas', arr);
+
   // Atualizar status da OS
   var osArr = load('os');
   var oi = osArr.findIndex(x=>x.id===id);
   if (oi>=0) { osArr[oi].status='Aguardando Retirada'; osArr[oi].vendaRef=venda.id; save('os',osArr); }
+
+  closeModal('modal-os-caixa');
   closeModal('modal-view-os');
-  showToast('✅ Venda '+venda.id+' criada! OS atualizada para "Aguardando Retirada".');
-  renderOS();
+  showToast('✅ Venda '+venda.id+' registrada!', 'success');
+
+  // Perguntar se quer imprimir recibo
+  setTimeout(function() {
+    if (confirm('✅ Pagamento registrado!\nTotal: '+fmtMoney(o.valor)+'\n\nDeseja imprimir o recibo?')) {
+      imprimirRecibo(venda.id);
+    }
+    renderOS();
+    showSection('vendas');
+  }, 300);
 }
 
 function renderComissoes() {
   if(!document.getElementById('tb-comissoes')) return;
+  var admin = isAdmin();
+  var user = loadUser();
+  var meuNome = user ? (user.nome||'').toLowerCase() : '';
+
   const pct = parseFloat(document.getElementById('comissao-pct-sel').value)||10;
-  const vendas = load('vendas');
+  var todasVendas = load('vendas');
+  // Vendedor vê apenas suas próprias vendas
+  var vendas = admin ? todasVendas : todasVendas.filter(function(v){ return (v.vendedor||'').toLowerCase() === meuNome; });
+
   const clMap = Object.fromEntries(load('clientes').map(c=>[c.id,c.nome]));
   const prodMap = Object.fromEntries(load('produtos').map(p=>[p.cod,p.desc]));
+  var cfg = window._comissaoVendedor || JSON.parse(localStorage.getItem('otica_config_comissao')||'{}');
 
   // Agrupar por vendedor
   const vendedores = {};
-  const clAtivos = new Set(load('clientes').filter(c=>c.status!=='Inativo').map(c=>c.id));
   vendas.forEach(v => {
     const vend = v.vendedor || 'Não informado';
     if (!vendedores[vend]) vendedores[vend] = {qtd:0, total:0, vendas:[]};
@@ -5920,24 +6063,38 @@ function renderComissoes() {
   });
 
   const totalGeral = Object.values(vendedores).reduce((s,v)=>s+v.total,0);
-  const totalComissao = totalGeral * pct/100;
+  const totalComissao = Object.entries(vendedores).reduce(function(s,[vend,d]){
+    var p = cfg[vend.toLowerCase()]||pct;
+    return s + d.total*(p/100);
+  },0);
 
-  document.getElementById('comissao-cards').innerHTML = `
-    <div class="stat-card green"><div class="label">Receita Total</div><div class="value">${fmtMoney(totalGeral)}</div><div class="sub">${vendas.length} vendas</div></div>
-    <div class="stat-card orange"><div class="label">Total Comissões (${pct}%)</div><div class="value">${fmtMoney(totalComissao)}</div><div class="sub">a pagar</div></div>
-    <div class="stat-card"><div class="label">Vendedores</div><div class="value">${Object.keys(vendedores).length}</div><div class="sub">ativos</div></div>
-  `;
+  // Cards — vendedor vê apenas suas próprias informações
+  if (admin) {
+    document.getElementById('comissao-cards').innerHTML = `
+      <div class="stat-card green"><div class="label">Receita Total</div><div class="value">${fmtMoney(totalGeral)}</div><div class="sub">${vendas.length} vendas</div></div>
+      <div class="stat-card orange"><div class="label">Total Comissões</div><div class="value">${fmtMoney(totalComissao)}</div><div class="sub">a pagar</div></div>
+      <div class="stat-card"><div class="label">Vendedores</div><div class="value">${Object.keys(vendedores).length}</div><div class="sub">ativos</div></div>
+    `;
+  } else {
+    var minhaComissao = totalGeral * (cfg[meuNome]||pct)/100;
+    document.getElementById('comissao-cards').innerHTML = `
+      <div class="stat-card green"><div class="label">Minhas Vendas</div><div class="value">${fmtMoney(totalGeral)}</div><div class="sub">${vendas.length} vendas</div></div>
+      <div class="stat-card orange"><div class="label">Minha Comissão</div><div class="value">${fmtMoney(minhaComissao)}</div><div class="sub">${cfg[meuNome]||pct}%</div></div>
+    `;
+  }
 
-  document.getElementById('tb-comissoes').innerHTML = Object.entries(vendedores).map(([vend,d]) => `
-    <tr>
-      <td><strong>${vend}</strong></td>
-      <td>${d.qtd}</td>
-      <td class="fw-bold">${fmtMoney(d.total)}</td>
-      <td>${pct}%</td>
-      <td class="fw-bold text-success">${fmtMoney(d.total*pct/100)}</td>
-      <td><span class="badge badge-info">${fmtPct(totalGeral?d.total/totalGeral*100:0)} do total</span></td>
-    </tr>
-  `).join('') || '<tr><td colspan="6" class="text-center" style="padding:20px;color:var(--text-muted)">Nenhuma venda registrada</td></tr>';
+  document.getElementById('tb-comissoes').innerHTML = Object.entries(vendedores).map(function(entry) {
+    var vend = entry[0]; var d = entry[1];
+    var pctVend = cfg[vend.toLowerCase()]||pct;
+    return '<tr>'
+      +'<td><strong>'+vend+'</strong></td>'
+      +'<td>'+d.qtd+'</td>'
+      +'<td class="fw-bold">'+fmtMoney(d.total)+'</td>'
+      +'<td>'+pctVend+'%</td>'
+      +'<td class="fw-bold text-success">'+fmtMoney(d.total*pctVend/100)+'</td>'
+      +'<td><span class="badge badge-info">'+fmtPct(totalGeral?d.total/totalGeral*100:0)+' do total</span></td>'
+      +'</tr>';
+  }).join('') || '<tr><td colspan="6" class="text-center" style="padding:20px;color:var(--text-muted)">Nenhuma venda registrada</td></tr>';
 
   document.getElementById('tb-comissoes-det').innerHTML = [...vendas].reverse().map(v => `
     <tr>
@@ -8684,7 +8841,7 @@ document.addEventListener('DOMContentLoaded', function() {
       localStorage.setItem('otica_config_comissao', JSON.stringify(window._comissaoVendedor));
     }
     seedData();
-    showSection('clientes');
+    showSection('dashboard');
     initDark();
     checkOSAtrasadas();
     seedAgendamentos();
