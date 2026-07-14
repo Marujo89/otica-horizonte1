@@ -797,7 +797,7 @@
   #sidebar-overlay.active { display: block; }
 
   /* Main com transição suave */
-  .main { transition: margin-left .3s cubic-bezier(.4,0,.2,1); }
+  .main { transition: margin-left .3s cubic-bezier(.4,0,.2,1); overflow-y:auto; min-height:100vh; }
 
   /* ═══════════════════════════════════════════════
      TABELAS — SCROLL HORIZONTAL
@@ -1150,7 +1150,7 @@ function instalarApp() {
 </div>
 </aside>
 <!-- ── USUÁRIOS ── -->
-<section class="section" id="sec-usuarios" style="overflow-y:auto">
+<section class="section" id="sec-usuarios">
 <div class="topbar">
 <h1>👥 Usuários do Sistema</h1>
 <div class="topbar-actions">
@@ -2366,7 +2366,7 @@ function instalarApp() {
 <span style="font-size:11px;font-weight:700;color:#854d0e">🔒 Painel Interno — Gestão (Admin)</span>
 <span id="venda-painel-arrow" style="color:#854d0e;font-size:12px">▼</span>
 </div>
-<div id="venda-painel-interno" style="display:none;background:#1a3a5c;border-radius:0 0 8px 8px;padding:10px">
+<div id="venda-painel-interno" style="display:none;background:#1a3a5c;border-radius:0 0 8px 8px;padding:10px;max-height:200px;overflow-y:auto">
 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:11px;color:rgba(255,255,255,.8)">
 <div>Custo Total:<br/><strong id="venda-int-custo" style="color:#fbbf24;font-size:13px">R$ 0,00</strong></div>
 <div>Receita Bruta:<br/><strong id="venda-int-bruta" style="color:#34d399;font-size:13px">R$ 0,00</strong></div>
@@ -5115,37 +5115,69 @@ function saveOS() {
   const isMontagem = tipoCobranca === 'montagem' || (osExistente && osExistente.tipoOS === 'montagem');
   if (!clienteId) { showToast('Selecione o cliente!','error'); return; }
   if (!isMontagem && !valor) { showToast('Preencha o valor total!','error'); return; }
+  // Preservar todos os campos da OS original ao editar
+  const osOriginal = idx ? (arr.find(x=>x.id===idx)||{}) : {};
   const obj = {
+    // Campos preservados da OS original
+    ...osOriginal,
+    // Campos editáveis
     id: idx || nextCode(arr,'OS'),
-    abertura: document.getElementById('os-abertura').value,
-    previsao: document.getElementById('os-previsao').value,
-    entrega: idx ? (arr.find(x=>x.id===idx)||{}).entrega||'' : '',
+    abertura: document.getElementById('os-abertura').value || osOriginal.abertura || '',
+    previsao: document.getElementById('os-previsao').value || osOriginal.previsao || '',
+    entrega: osOriginal.entrega || '',
     clienteId,
-    tipo: document.getElementById('os-tipo').value,
-    armacao: document.getElementById('os-armacao').value,
+    tipo: isMontagem ? (osOriginal.tipo || document.getElementById('os-tipo').value) : document.getElementById('os-tipo').value,
+    armacao: document.getElementById('os-armacao').value || osOriginal.armacao || '',
     tecnico: document.getElementById('os-tecnico').value,
-    longeOdEsf:  parseFloat(document.getElementById('os-longe-od-esf')?.value)||0,
-    longeOdCil:  parseFloat(document.getElementById('os-longe-od-cil')?.value)||0,
-    longeOdEixo: parseFloat(document.getElementById('os-longe-od-eixo')?.value)||0,
-    longeOeEsf:  parseFloat(document.getElementById('os-longe-oe-esf')?.value)||0,
-    longeOeCil:  parseFloat(document.getElementById('os-longe-oe-cil')?.value)||0,
-    longeOeEixo: parseFloat(document.getElementById('os-longe-oe-eixo')?.value)||0,
-    pertoOdEsf:  parseFloat(document.getElementById('os-perto-od-esf')?.value)||0,
-    pertoOdCil:  parseFloat(document.getElementById('os-perto-od-cil')?.value)||0,
-    pertoOdEixo: parseFloat(document.getElementById('os-perto-od-eixo')?.value)||0,
-    pertoOeEsf:  parseFloat(document.getElementById('os-perto-oe-esf')?.value)||0,
-    pertoOeCil:  parseFloat(document.getElementById('os-perto-oe-cil')?.value)||0,
-    pertoOeEixo: parseFloat(document.getElementById('os-perto-oe-eixo')?.value)||0,
-    adicao: parseFloat(document.getElementById('os-adicao')?.value)||0,
-    odEsf: parseFloat(document.getElementById('os-longe-od-esf')?.value)||0,
-    odCil: parseFloat(document.getElementById('os-longe-od-cil')?.value)||0,
-    oeEsf: parseFloat(document.getElementById('os-longe-oe-esf')?.value)||0,
-    oeCil: parseFloat(document.getElementById('os-longe-oe-cil')?.value)||0,
-    valor,
     status: document.getElementById('os-status').value,
-    descricao: (document.getElementById('os-descricao')?.value||'').trim(),
     obs: document.getElementById('os-obs').value,
+    // tipoOS preservado da original
+    tipoOS: osOriginal.tipoOS || (isMontagem ? 'montagem' : 'conserto'),
+    vendaRef: osOriginal.vendaRef || '',
+    receitaRef: osOriginal.receitaRef || null,
+    medico: osOriginal.medico || '',
+    // Valor: 0 para montagem, campo para conserto
+    valor: isMontagem ? 0 : valor,
+    cobranca: isMontagem ? 'montagem' : (document.getElementById('os-cobranca')?.value || 'cobrado'),
   };
+
+  // Para conserto: preservar descrição
+  if (!isMontagem) {
+    obj.descricao = (document.getElementById('os-descricao')?.value||'').trim();
+  }
+
+  // Para montagem: preservar graus da receita (só atualiza se campos estiverem visíveis)
+  if (isMontagem) {
+    var receitaBox = document.getElementById('os-receita-box');
+    if (receitaBox && receitaBox.style.display !== 'none') {
+      obj.longeOdEsf  = parseFloat(document.getElementById('os-longe-od-esf')?.value)||osOriginal.longeOdEsf||0;
+      obj.longeOdCil  = parseFloat(document.getElementById('os-longe-od-cil')?.value)||osOriginal.longeOdCil||0;
+      obj.longeOdEixo = parseFloat(document.getElementById('os-longe-od-eixo')?.value)||osOriginal.longeOdEixo||0;
+      obj.longeOeEsf  = parseFloat(document.getElementById('os-longe-oe-esf')?.value)||osOriginal.longeOeEsf||0;
+      obj.longeOeCil  = parseFloat(document.getElementById('os-longe-oe-cil')?.value)||osOriginal.longeOeCil||0;
+      obj.longeOeEixo = parseFloat(document.getElementById('os-longe-oe-eixo')?.value)||osOriginal.longeOeEixo||0;
+      obj.pertoOdEsf  = parseFloat(document.getElementById('os-perto-od-esf')?.value)||osOriginal.pertoOdEsf||0;
+      obj.pertoOdCil  = parseFloat(document.getElementById('os-perto-od-cil')?.value)||osOriginal.pertoOdCil||0;
+      obj.pertoOdEixo = parseFloat(document.getElementById('os-perto-od-eixo')?.value)||osOriginal.pertoOdEixo||0;
+      obj.pertoOeEsf  = parseFloat(document.getElementById('os-perto-oe-esf')?.value)||osOriginal.pertoOeEsf||0;
+      obj.pertoOeCil  = parseFloat(document.getElementById('os-perto-oe-cil')?.value)||osOriginal.pertoOeCil||0;
+      obj.pertoOeEixo = parseFloat(document.getElementById('os-perto-oe-eixo')?.value)||osOriginal.pertoOeEixo||0;
+      obj.adicao      = parseFloat(document.getElementById('os-adicao')?.value)||osOriginal.adicao||0;
+      obj.odEsf = obj.longeOdEsf; obj.odCil = obj.longeOdCil;
+      obj.oeEsf = obj.longeOeEsf; obj.oeCil = obj.longeOeCil;
+    }
+  } else {
+    obj.longeOdEsf  = parseFloat(document.getElementById('os-longe-od-esf')?.value)||0;
+    obj.longeOdCil  = parseFloat(document.getElementById('os-longe-od-cil')?.value)||0;
+    obj.longeOdEixo = parseFloat(document.getElementById('os-longe-od-eixo')?.value)||0;
+    obj.longeOeEsf  = parseFloat(document.getElementById('os-longe-oe-esf')?.value)||0;
+    obj.longeOeCil  = parseFloat(document.getElementById('os-longe-oe-cil')?.value)||0;
+    obj.longeOeEixo = parseFloat(document.getElementById('os-longe-oe-eixo')?.value)||0;
+    obj.adicao      = parseFloat(document.getElementById('os-adicao')?.value)||0;
+    obj.odEsf = obj.longeOdEsf; obj.odCil = obj.longeOdCil;
+    obj.oeEsf = obj.longeOeEsf; obj.oeCil = obj.longeOeCil;
+  }
+
   if (idx) { const i=arr.findIndex(x=>x.id===idx); arr[i]=obj; } else arr.push(obj);
   save('os', arr);
   document.getElementById('os-idx').value = '';
@@ -6116,15 +6148,13 @@ function confirmarOSCaixa() {
 
   closeModal('modal-os-caixa');
   closeModal('modal-view-os');
-  showToast('✅ Venda '+venda.id+' registrada!', 'success');
+  showToast('✅ Venda '+venda.id+' registrada! Total: '+fmtMoney(o.valor), 'success');
 
-  // Perguntar se quer imprimir recibo
+  // Ir direto para impressão do recibo
   setTimeout(function() {
-    if (confirm('✅ Pagamento registrado!\nTotal: '+fmtMoney(o.valor)+'\n\nDeseja imprimir o recibo?')) {
-      imprimirRecibo(venda.id);
-    }
     renderOS();
     showSection('vendas');
+    setTimeout(function() { imprimirRecibo(venda.id); }, 400);
   }, 300);
 }
 
