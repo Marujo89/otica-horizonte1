@@ -1150,7 +1150,7 @@ function instalarApp() {
 </div>
 </aside>
 <!-- ── USUÁRIOS ── -->
-<section class="section" id="sec-usuarios">
+<section class="section" id="sec-usuarios" style="overflow-y:auto">
 <div class="topbar">
 <h1>👥 Usuários do Sistema</h1>
 <div class="topbar-actions">
@@ -1339,7 +1339,7 @@ function instalarApp() {
 <div class="topbar-actions">
 <button class="btn btn-outline" id="btn-historico-estoque" onclick="toggleHistoricoEstoque()">📋 Histórico</button>
 <button class="btn btn-warning" onclick="checkEstoque()">⚠️ Verificar Estoque</button>
-<button class="btn btn-primary" onclick="openModal('modal-produto')">➕ Novo Produto</button>
+<button class="btn btn-primary" id="btn-novo-produto" onclick="openModal('modal-produto')">➕ Novo Produto</button>
 </div>
 </div>
 <div class="card" id="card-historico-estoque" style="margin-bottom:20px;display:none">
@@ -2360,9 +2360,30 @@ function instalarApp() {
 </tbody>
 </table>
 </div>
+<!-- Painel Interno protegido -->
+<div id="venda-painel-interno-wrapper" style="margin-bottom:8px">
+<div id="venda-painel-toggle" onclick="togglePainelInterno()" style="background:#fef9c3;border:1px solid #fde047;border-radius:8px;padding:7px 12px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none">
+<span style="font-size:11px;font-weight:700;color:#854d0e">🔒 Painel Interno — Gestão (Admin)</span>
+<span id="venda-painel-arrow" style="color:#854d0e;font-size:12px">▼</span>
+</div>
+<div id="venda-painel-interno" style="display:none;background:#1a3a5c;border-radius:0 0 8px 8px;padding:10px">
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:11px;color:rgba(255,255,255,.8)">
+<div>Custo Total:<br/><strong id="venda-int-custo" style="color:#fbbf24;font-size:13px">R$ 0,00</strong></div>
+<div>Receita Bruta:<br/><strong id="venda-int-bruta" style="color:#34d399;font-size:13px">R$ 0,00</strong></div>
+<div>Desconto:<br/><strong id="venda-int-desc" style="color:#f87171;font-size:13px">R$ 0,00</strong></div>
+<div>Rec. Líquida:<br/><strong id="venda-int-liquida" style="color:#34d399;font-size:13px">R$ 0,00</strong></div>
+<div>Comissão:<br/><strong id="venda-int-comissao" style="color:#fb923c;font-size:13px">R$ 0,00</strong></div>
+<div>Lucro Real:<br/><strong id="venda-int-lucro" style="color:#34d399;font-size:14px;font-weight:800">R$ 0,00</strong></div>
+</div>
+<div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.2);display:flex;justify-content:space-between;align-items:center">
+<span style="font-size:11px;color:rgba(255,255,255,.7)">Margem Real:</span>
+<strong id="venda-int-margem" style="color:#60a5fa;font-size:16px;font-weight:800">0%</strong>
+</div>
+</div>
+</div>
 </div>
 <!-- Rodapé fixo — SEMPRE VISÍVEL -->
-<div style="flex-shrink:0;padding:10px 14px;border-top:2px solid #e2e8f0;background:#fff;box-shadow:0 -4px 12px rgba(0,0,0,.06);overflow-y:auto;max-height:55vh">
+<div style="flex-shrink:0;padding:10px 14px;border-top:2px solid #e2e8f0;background:#fff;box-shadow:0 -4px 12px rgba(0,0,0,.06)">
 <!-- Desconto Global -->
 <div style="background:#fdf2f8;border-radius:10px;padding:8px 12px;margin-bottom:8px;border-left:3px solid #ec4899">
 <div style="font-size:10px;font-weight:700;color:#9d174d;text-transform:uppercase;margin-bottom:5px">🏷️ Desconto Global</div>
@@ -2390,27 +2411,6 @@ function instalarApp() {
 <div style="display:flex;justify-content:space-between;font-size:19px;font-weight:800;border-top:2px solid #16a34a;padding-top:5px">
 <span style="color:#1a3a5c">TOTAL:</span>
 <span id="venda-total-final" style="color:#16a34a">R$ 0,00</span>
-</div>
-</div>
-<!-- Painel Interno protegido -->
-<div id="venda-painel-interno-wrapper" style="margin-bottom:8px">
-<div id="venda-painel-toggle" onclick="togglePainelInterno()" style="background:#fef9c3;border:1px solid #fde047;border-radius:8px;padding:7px 12px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none">
-<span style="font-size:11px;font-weight:700;color:#854d0e">🔒 Painel Interno — Gestão (Admin)</span>
-<span id="venda-painel-arrow" style="color:#854d0e;font-size:12px">▼</span>
-</div>
-<div id="venda-painel-interno" style="display:none;background:#1a3a5c;border-radius:0 0 8px 8px;padding:10px">
-<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:11px;color:rgba(255,255,255,.8)">
-<div>Custo Total:<br/><strong id="venda-int-custo" style="color:#fbbf24;font-size:13px">R$ 0,00</strong></div>
-<div>Receita Bruta:<br/><strong id="venda-int-bruta" style="color:#34d399;font-size:13px">R$ 0,00</strong></div>
-<div>Desconto:<br/><strong id="venda-int-desc" style="color:#f87171;font-size:13px">R$ 0,00</strong></div>
-<div>Rec. Líquida:<br/><strong id="venda-int-liquida" style="color:#34d399;font-size:13px">R$ 0,00</strong></div>
-<div>Comissão:<br/><strong id="venda-int-comissao" style="color:#fb923c;font-size:13px">R$ 0,00</strong></div>
-<div>Lucro Real:<br/><strong id="venda-int-lucro" style="color:#34d399;font-size:14px;font-weight:800">R$ 0,00</strong></div>
-</div>
-<div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.2);display:flex;justify-content:space-between;align-items:center">
-<span style="font-size:11px;color:rgba(255,255,255,.7)">Margem Real:</span>
-<strong id="venda-int-margem" style="color:#60a5fa;font-size:16px;font-weight:800">0%</strong>
-</div>
 </div>
 </div>
 <!-- Botões de ação -->
@@ -3830,9 +3830,16 @@ function showSection(id) {
   var secEl = document.getElementById('sec-'+id);
   if (!secEl) { console.error('Seção não encontrada: sec-'+id); return; }
   secEl.classList.add('active');
-  const items = document.querySelectorAll('.nav-item');
-  const map = {dashboard:0,clientes:1,receitas:2,vendas:3,os:4,produtos:5,agendamentos:6,comissoes:7,despesas:8,relatorios:9,usuarios:10};
-  if (map[id] !== undefined) items[map[id]].classList.add('active');
+
+  // Reaplicar controle de acesso (garante nav-usuarios visível para admin)
+  aplicarControleAcesso();
+
+  // Marcar item ativo no menu
+  document.querySelectorAll('.nav-item').forEach(function(el) {
+    var oc = el.getAttribute('onclick') || '';
+    if (oc.indexOf("'"+id+"'") !== -1) el.classList.add('active');
+  });
+
   const renders = {dashboard:renderDashboard,clientes:renderClientes,receitas:renderReceitas,produtos:renderProdutos,vendas:renderVendas,os:renderOS,relatorios:renderRelatorios,agendamentos:renderAgendamentos,comissoes:renderComissoes,despesas:renderDespesas,usuarios:renderUsuarios};
   if (renders[id]) { try { renders[id](); } catch(e) { console.error('Erro ao renderizar '+id+':', e); showToast('Erro ao carregar: '+e.message,'error'); } }
   } catch(e) { console.error('Erro showSection:', e); showToast('Erro de navegação: '+e.message,'error'); }
@@ -4071,7 +4078,9 @@ function isVendedor() {
 // Aplicar controle de acesso em todos os módulos
 function aplicarControleAcesso() {
   var admin = isAdmin();
-  var modulosSoAdmin = ['produtos','despesas','usuarios'];
+  // Produtos: vendedor pode ver mas não cadastrar/excluir (custo/margem ocultos)
+  // Despesas e Usuários: só admin
+  var modulosSoAdmin = ['despesas','usuarios'];
 
   // Ocultar módulos exclusivos do admin para vendedor
   modulosSoAdmin.forEach(function(mod) {
@@ -4080,6 +4089,18 @@ function aplicarControleAcesso() {
       if (oc.indexOf(mod) !== -1) el.style.display = admin ? '' : 'none';
     });
   });
+
+  // Módulo Usuários — mostrar apenas para admin
+  var navU = document.getElementById('nav-usuarios');
+  if (navU) navU.style.display = admin ? 'flex' : 'none';
+
+  // Botão Nova OS — só admin
+  var btnNovaOS = document.getElementById('btn-nova-os');
+  if (btnNovaOS) btnNovaOS.style.display = admin ? '' : 'none';
+
+  // Botão Novo Produto — só admin
+  var btnNovoProd = document.getElementById('btn-novo-produto');
+  if (btnNovoProd) btnNovoProd.style.display = admin ? '' : 'none';
 }
 
 function renderClientes() {
@@ -5178,8 +5199,14 @@ function renderRelatorios() {
   var todasOS = load('os');
 
   // Filtrar por período
-  var vendas = periodo === 'tudo' ? todasVendas : todasVendas.filter(v=>(v.data||'') >= dataInicioStr);
+  var todasVendasPeriodo = periodo === 'tudo' ? todasVendas : todasVendas.filter(v=>(v.data||'') >= dataInicioStr);
   var os = periodo === 'tudo' ? todasOS : todasOS.filter(o=>(o.abertura||'') >= dataInicioStr);
+
+  // Vendedor vê apenas suas próprias vendas
+  var admin2 = isAdmin();
+  var user2 = loadUser();
+  var meuNome2 = user2 ? (user2.nome||'').toLowerCase() : '';
+  var vendas = admin2 ? todasVendasPeriodo : todasVendasPeriodo.filter(function(v){ return (v.vendedor||'').toLowerCase() === meuNome2; });
 
   var clMap = Object.fromEntries(clientes.map(c=>[c.id,c.nome]));
   var prodMap = Object.fromEntries(produtos.map(p=>[p.cod,p.desc]));
@@ -5190,15 +5217,19 @@ function renderRelatorios() {
   var baixoEstoque = produtos.filter(p=>p.qtd<=p.min).length;
   var osAberto = os.filter(o=>o.status!=='Entregue'&&o.status!=='Cancelada').length;
 
-  // Cards de resumo
-  document.getElementById('rel-cards').innerHTML = `
+  // Cards de resumo — vendedor vê apenas suas vendas
+  var cardsAdmin = admin2 ? `
     <div class="stat-card green"><div class="label">Receita Total</div><div class="value">${fmtMoney(totalVendas+totalOS)}</div><div class="sub">vendas + OS</div></div>
-    <div class="stat-card"><div class="label">Receita Vendas</div><div class="value">${fmtMoney(totalVendas)}</div><div class="sub">${vendas.length} vendas</div></div>
     <div class="stat-card"><div class="label">Receita OS</div><div class="value">${fmtMoney(totalOS)}</div><div class="sub">${os.filter(o=>o.tipoOS!=='montagem').length} OS</div></div>
     <div class="stat-card orange"><div class="label">Descontos</div><div class="value">${fmtMoney(totalDesc)}</div><div class="sub">concedidos</div></div>
-    <div class="stat-card"><div class="label">Ticket Médio</div><div class="value">${fmtMoney(vendas.length?totalVendas/vendas.length:0)}</div><div class="sub">por venda</div></div>
     <div class="stat-card ${baixoEstoque>0?'red':'green'}"><div class="label">Estoque Baixo</div><div class="value">${baixoEstoque}</div><div class="sub">produtos</div></div>
+  ` : '';
+  var cardsVendedor = `
+    <div class="stat-card green"><div class="label">Minhas Vendas</div><div class="value">${fmtMoney(totalVendas)}</div><div class="sub">${vendas.length} vendas</div></div>
+    <div class="stat-card"><div class="label">Meu Ticket Médio</div><div class="value">${fmtMoney(vendas.length?totalVendas/vendas.length:0)}</div><div class="sub">por venda</div></div>
+    <div class="stat-card orange"><div class="label">Descontos</div><div class="value">${fmtMoney(totalDesc)}</div><div class="sub">concedidos</div></div>
   `;
+  document.getElementById('rel-cards').innerHTML = cardsAdmin + cardsVendedor;
 
   // Pagamentos
   var pags = {};
@@ -5537,7 +5568,7 @@ function doPrintOS() {
       'body{font-family:Segoe UI,sans-serif;color:#1e293b;padding:20px}',
       'table{width:100%;border-collapse:collapse}',
       'th,td{padding:8px;border:1px solid #e2e8f0}',
-      '@media print{body{padding:0}.nop{display:none!important}}</style></head><body>',
+      '@media print{body{padding:0;margin:0}.nop,.no-print{display:none!important}@page{size:A5;margin:8mm}}</style></head><body>',
       printArea.innerHTML,
       '<div class="nop" style="text-align:center;margin-top:20px;padding:16px">',
       '<button onclick="window.print()" style="padding:12px 32px;background:#1a3a5c;color:white;border:none;border-radius:8px;font-size:15px;cursor:pointer;font-weight:700;margin-right:10px">Imprimir / Salvar PDF</button>',
