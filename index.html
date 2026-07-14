@@ -839,6 +839,21 @@
   }
 
   /* ═══════════════════════════════════════════════
+     NOVA VENDA — MOBILE (abas)
+  ═══════════════════════════════════════════════ */
+  .venda-tab-btn {
+    flex: 1; padding: 10px; border: none; cursor: pointer;
+    font-size: 13px; font-weight: 700; transition: all .2s;
+    background: #f0f4ff; color: #0d2b4e;
+  }
+  .venda-tab-btn.active {
+    background: linear-gradient(135deg,#0d2b4e,#1a4a7a);
+    color: #e8c96a;
+  }
+  .venda-tab-content { display: none; }
+  .venda-tab-content.active { display: block; }
+
+  /* ═══════════════════════════════════════════════
      MOBILE (<768px) — Sidebar oculta, modais bottom
   ═══════════════════════════════════════════════ */
   @media (max-width: 768px) {
@@ -2231,9 +2246,16 @@ function instalarApp() {
 </div>
 </div>
 <!-- CORPO: 2 COLUNAS -->
-<div style="display:grid;grid-template-columns:380px 1fr;height:calc(88vh - 60px);overflow:hidden">
+<div id="venda-corpo-grid" style="display:grid;grid-template-columns:380px 1fr;height:calc(88vh - 60px);overflow:hidden">
+<!-- ABAS MOBILE -->
+<div id="venda-tabs-mobile" style="display:none;border-bottom:1px solid #e2e8f0">
+<div style="display:flex">
+<button class="venda-tab-btn active" onclick="switchVendaTab('produtos')">🛒 Produtos</button>
+<button class="venda-tab-btn" onclick="switchVendaTab('carrinho')">🛍️ Carrinho <span id="venda-tab-badge" style="background:#0ea5e9;color:#fff;border-radius:10px;padding:1px 8px;font-size:10px">0</span></button>
+</div>
+</div>
 <!-- COLUNA ESQUERDA -->
-<div style="background:#f8fafc;border-right:1px solid #e2e8f0;overflow-y:auto;padding:14px">
+<div id="venda-col-esq" style="background:#f8fafc;border-right:1px solid #e2e8f0;overflow-y:auto;padding:14px">
 <!-- Óculos Completo -->
 <div style="background:#f0f4ff;border-radius:12px;padding:12px;margin-bottom:10px;border-left:4px solid #0d2b4e">
 <div style="font-size:11px;font-weight:700;color:#0d2b4e;text-transform:uppercase;margin-bottom:8px">🔶 Óculos de Grau Completo</div>
@@ -2318,7 +2340,7 @@ function instalarApp() {
 </div>
 </div>
 <!-- COLUNA DIREITA -->
-<div style="display:flex;flex-direction:column;overflow:hidden;background:#fff">
+<div id="venda-col-dir" style="display:flex;flex-direction:column;overflow:hidden;background:#fff">
 <!-- Carrinho scrollável -->
 <div style="flex:1;overflow-y:auto;padding:14px 14px 0">
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
@@ -2515,8 +2537,12 @@ function instalarApp() {
 <label>📝 Descrição do Serviço</label>
 <textarea id="os-descricao" placeholder="Descreva o serviço a ser realizado..." rows="2" style="width:100%;resize:vertical"></textarea>
 </div>
+<!-- Valor — oculto para OS de montagem -->
+<div class="form-group" id="os-valor-group" style="margin-top:8px">
+<label>Valor Total (R$)</label>
+<input id="os-valor" placeholder="0.00" step="0.01" type="number"/>
+</div>
 <div class="form-grid" style="margin-top:8px">
-<div class="form-group" id="os-valor-group"><label>Valor Total (R$)</label><input id="os-valor" placeholder="0.00" step="0.01" type="number"/></div>
 <div class="form-group">
 <label>Status</label>
 <select id="os-status">
@@ -7924,6 +7950,52 @@ function selecionarEstoqueBusca(tipo, cod) {
 }
 
 // Ocultar campos de custo para vendedor
+// ── Abas mobile no modal de venda ─────────────────────────────────────────
+function initVendaMobile() {
+  var isMobile = window.innerWidth <= 768;
+  var tabs = document.getElementById('venda-tabs-mobile');
+  var grid = document.getElementById('venda-corpo-grid');
+  var colEsq = document.getElementById('venda-col-esq');
+  var colDir = document.getElementById('venda-col-dir');
+  if (!tabs || !grid) return;
+  if (isMobile) {
+    tabs.style.display = 'block';
+    grid.style.gridTemplateColumns = '1fr';
+    grid.style.height = 'auto';
+    grid.style.overflow = 'visible';
+    colEsq.style.display = 'block';
+    colDir.style.display = 'none';
+  } else {
+    tabs.style.display = 'none';
+    grid.style.gridTemplateColumns = '380px 1fr';
+    grid.style.height = 'calc(88vh - 60px)';
+    grid.style.overflow = 'hidden';
+    colEsq.style.display = '';
+    colDir.style.display = '';
+  }
+}
+
+function switchVendaTab(tab) {
+  var colEsq = document.getElementById('venda-col-esq');
+  var colDir = document.getElementById('venda-col-dir');
+  var btns = document.querySelectorAll('.venda-tab-btn');
+  if (tab === 'produtos') {
+    colEsq.style.display = 'block';
+    colDir.style.display = 'none';
+    btns[0].classList.add('active'); btns[1].classList.remove('active');
+  } else {
+    colEsq.style.display = 'none';
+    colDir.style.display = 'flex';
+    btns[1].classList.add('active'); btns[0].classList.remove('active');
+  }
+}
+
+// Atualizar badge da aba carrinho
+function atualizarTabBadge() {
+  var badge = document.getElementById('venda-tab-badge');
+  if (badge && _carrinho) badge.textContent = _carrinho.length;
+}
+
 function ocultarCustosVendedor() {
   var isAdmin = (function(){ var u=loadUser(); return u&&(u.nivel==='Admin'||u.nome==='Administrador'); })();
   var custoBoxes = ['venda-arm-custo-wrap', 'venda-len-custo-wrap'];
@@ -8274,6 +8346,7 @@ function initVendaModal() {
   // Controle de visibilidade do painel interno por nível
   initPainelInternoVisibilidade();
   ocultarCustosVendedor();
+  initVendaMobile();
 
   // Restaurar rascunho se existir (e não vier de orçamento)
   if (rascunho && rascunho.carrinho && rascunho.carrinho.length > 0 && !window._orcamentoFechando) {
@@ -8353,6 +8426,7 @@ function removerItemCarrinho(idx) {
 }
 
 function renderCarrinho() {
+  atualizarTabBadge();
   const box = document.getElementById('venda-carrinho-box');
   const tbody = document.getElementById('venda-carrinho-tbody');
   if (!box || !tbody) return;
