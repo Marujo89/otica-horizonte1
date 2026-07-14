@@ -2342,7 +2342,7 @@ function instalarApp() {
 <!-- COLUNA DIREITA -->
 <div id="venda-col-dir" style="display:flex;flex-direction:column;overflow:hidden;background:#fff">
 <!-- Carrinho scrollável -->
-<div style="flex:1;overflow-y:auto;padding:14px 14px 0;min-height:0">
+<div style="flex:1;overflow-y:auto;padding:14px 14px 0;min-height:100px">
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
 <div style="font-size:13px;font-weight:700;color:#1a3a5c">🛒 Carrinho</div>
 <span id="venda-carrinho-badge" style="background:#0ea5e9;color:#fff;border-radius:10px;padding:2px 10px;font-size:11px;font-weight:700">0 itens</span>
@@ -2362,7 +2362,7 @@ function instalarApp() {
 </div>
 </div>
 <!-- Rodapé fixo — SEMPRE VISÍVEL -->
-<div style="flex-shrink:0;padding:10px 14px;border-top:2px solid #e2e8f0;background:#fff;box-shadow:0 -4px 12px rgba(0,0,0,.06)">
+<div style="flex-shrink:0;padding:10px 14px;border-top:2px solid #e2e8f0;background:#fff;box-shadow:0 -4px 12px rgba(0,0,0,.06);overflow-y:auto;max-height:55vh">
 <!-- Desconto Global -->
 <div style="background:#fdf2f8;border-radius:10px;padding:8px 12px;margin-bottom:8px;border-left:3px solid #ec4899">
 <div style="font-size:10px;font-weight:700;color:#9d174d;text-transform:uppercase;margin-bottom:5px">🏷️ Desconto Global</div>
@@ -3898,7 +3898,7 @@ function renderDashboard() {
   document.getElementById('dash-date').textContent = new Date().toLocaleDateString('pt-BR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   const clientes = load('clientes').filter(c=>c.status!=='Inativo'), produtos = load('produtos'), vendas = load('vendas'), os = load('os');
   const totalVendas = vendas.reduce((s,v) => s + calcTotal(v), 0);
-  const totalOS = os.reduce((s,o) => s + (o.valor||0), 0);
+  const totalOS = os.filter(o=>o.tipoOS!=='montagem').reduce((s,o) => s + (o.valor||0), 0);
   const baixoEstoque = produtos.filter(p => p.qtd <= p.min).length;
   const osAberto = os.filter(o => o.status !== 'Entregue' && o.status !== 'Cancelada').length;
   var mesAtual = new Date().toISOString().slice(0,7);
@@ -4817,12 +4817,14 @@ function renderOS() {
     o.status.toLowerCase().includes(q.toLowerCase())
   );
   const aberto = data.filter(o=>o.status!=='Entregue'&&o.status!=='Cancelada').length;
-  const totalFat = data.reduce((s,o)=>s+(o.valor||0),0);
+  // Faturamento exclui OS de montagem (valor já cobrado na venda)
+  const dataConserto = data.filter(o=>o.tipoOS!=='montagem');
+  const totalFat = dataConserto.reduce((s,o)=>s+(o.valor||0),0);
   document.getElementById('os-cards').innerHTML = `
-    <div class="stat-card"><div class="label">Total OS</div><div class="value">${data.length}</div><div class="sub">registradas</div></div>
+    <div class="stat-card"><div class="label">Total OS</div><div class="value">${data.length}</div><div class="sub">${dataConserto.length} conserto(s)</div></div>
     <div class="stat-card orange"><div class="label">Em Aberto</div><div class="value">${aberto}</div><div class="sub">aguardando</div></div>
-    <div class="stat-card green"><div class="label">Faturamento OS</div><div class="value">${fmtMoney(totalFat)}</div><div class="sub">total</div></div>
-    <div class="stat-card"><div class="label">Ticket Médio OS</div><div class="value">${fmtMoney(data.length?totalFat/data.length:0)}</div><div class="sub">por OS</div></div>
+    <div class="stat-card green"><div class="label">Faturamento OS</div><div class="value">${fmtMoney(totalFat)}</div><div class="sub">consertos</div></div>
+    <div class="stat-card"><div class="label">Ticket Médio OS</div><div class="value">${fmtMoney(dataConserto.length?totalFat/dataConserto.length:0)}</div><div class="sub">por conserto</div></div>
   `;
   document.getElementById('tb-os').innerHTML = data.length ? [...data].reverse().map(o => `
     <tr>
