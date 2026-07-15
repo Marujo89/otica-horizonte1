@@ -1394,64 +1394,7 @@ function instalarApp() {
 </div>
 </section>
 <!-- ── VENDAS ── -->
-<section class="section" id="sec-vendas">
-<div class="topbar">
-<h1>💰 Vendas &amp; Caixa</h1>
-<div class="topbar-actions">
-<button class="btn btn-primary" onclick="openModal('modal-venda');setTimeout(initVendaModal,50)">➕ Nova Venda</button>
-</div>
-</div>
-<div class="cards-grid" id="vendas-cards"></div>
-<!-- ── Crediário — Contas a Receber ── -->
-<div class="card" id="card-contas-crediario" style="margin-bottom:20px">
-<div class="card-header" style="background:linear-gradient(135deg,#0d2b4e,#1a4a7a);border-radius:14px 14px 0 0">
-<h3 style="color:#e8c96a">💳 Crediário — Parcelas a Receber</h3>
-</div>
-<div class="card-body">
-<div class="cards-grid" id="contas-crediario-cards" style="margin-bottom:12px"></div>
-<div class="card-body" style="padding:0">
-<table><thead><tr><th>Venda</th><th>Cliente</th><th>Parcela</th><th>Vencimento</th><th>Valor</th><th>Status</th><th>Ações</th></tr></thead>
-<tbody id="contas-crediario-body"></tbody></table>
-</div>
-</div>
-</div>
-<!-- ── Contas a Receber (vendas pendentes) ── -->
-<div class="card" id="card-contas-receber" style="margin-bottom:20px">
-<div class="card-header" style="background:linear-gradient(135deg,#dc2626,#f87171);border-radius:14px 14px 0 0">
-<h3 style="color:white">💳 Vendas Pendentes</h3>
-<span id="contas-receber-total" style="font-size:12px;color:rgba(255,255,255,.8)"></span>
-</div>
-<div id="contas-receber-body">
-<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:13px">
-      Nenhuma conta pendente. ✅
-    </div>
-</div>
-</div>
-<!-- ── Orçamentos Pendentes ── -->
-<div class="card" id="card-orcamentos-pendentes" style="margin-bottom:20px">
-<div class="card-header" style="background:linear-gradient(135deg,#1d4ed8,#3b82f6);border-radius:14px 14px 0 0">
-<h3 style="color:white">📋 Orçamentos Pendentes</h3>
-<span id="orcamentos-count" style="font-size:12px;color:rgba(255,255,255,.7)">0 orçamento(s)</span>
-</div>
-<div id="orcamentos-pendentes-body">
-<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:13px">
-      Nenhum orçamento pendente. Clique em <strong>"➕ Nova Venda"</strong> e salve como orçamento!
-    </div>
-</div>
-</div>
-<div class="card">
-<div class="card-header">
-<h3>Registro de Vendas</h3>
-<div class="search-bar" style="margin:0">
-<input id="search-vendas" oninput="renderVendas()" placeholder="🔍 Buscar por nº, cliente ou produto..." type="text"/>
-</div>
-</div>
-<div class="card-body" style="padding:0">
-<table><thead><tr><th>Nº</th><th>Data</th><th>Cliente</th><th>Produto / Serviço</th><th>Qtd</th><th>Total</th><th>Pagamento</th><th>Status</th><th>Ações</th></tr></thead>
-<tbody id="tb-vendas"></tbody></table>
-</div>
-</div>
-</section>
+<section class="section" 
 <!-- ── OS ── -->
 <section class="section" id="sec-os">
 <div class="topbar">
@@ -3983,6 +3926,18 @@ function instalarApp() {
 </div>
 </div>
 <div class="cards-grid" id="vendas-cards"></div>
+<div class="card" style="margin-bottom:16px">
+<div class="card-header">
+<h3>📋 Registro de Vendas</h3>
+<div class="search-bar" style="margin:0">
+<input id="search-vendas" oninput="renderVendas()" placeholder="🔍 Buscar por nº, cliente ou produto..." type="text"/>
+</div>
+</div>
+<div class="card-body" style="padding:0">
+<table><thead><tr><th>Nº</th><th>Data</th><th>Cliente</th><th>Produto / Serviço</th><th>Total</th><th>Pagamento</th><th>Status</th><th>Ações</th></tr></thead>
+<tbody id="tb-vendas"></tbody></table>
+</div>
+</div>
 <!-- ── Crediário — Contas a Receber ── -->
 <div class="card" id="card-contas-crediario" style="margin-bottom:20px">
 <div class="card-header" style="background:linear-gradient(135deg,#0d2b4e,#1a4a7a);border-radius:14px 14px 0 0">
@@ -4018,18 +3973,6 @@ function instalarApp() {
 <div style="padding:20px;text-align:center;color:var(--text-muted);font-size:13px">
       Nenhum orçamento pendente. Clique em <strong>"➕ Nova Venda"</strong> e salve como orçamento!
     </div>
-</div>
-</div>
-<div class="card">
-<div class="card-header">
-<h3>Registro de Vendas</h3>
-<div class="search-bar" style="margin:0">
-<input id="search-vendas" oninput="renderVendas()" placeholder="🔍 Buscar por nº, cliente ou produto..." type="text"/>
-</div>
-</div>
-<div class="card-body" style="padding:0">
-<table><thead><tr><th>Nº</th><th>Data</th><th>Cliente</th><th>Produto / Serviço</th><th>Qtd</th><th>Total</th><th>Pagamento</th><th>Status</th><th>Ações</th></tr></thead>
-<tbody id="tb-vendas"></tbody></table>
 </div>
 </div>
 </section>
@@ -6938,6 +6881,22 @@ function isVendedor() {
 }
 
 // Aplicar controle de acesso em todos os módulos
+function atualizarSyncIndicator() {
+  var icon = document.getElementById('sync-icon');
+  var text = document.getElementById('sync-text');
+  if (!icon || !text) return;
+  var ultimo = localStorage.getItem('otica_ultimo_sync');
+  if (ultimo) {
+    var diff = Math.floor((Date.now() - parseInt(ultimo)) / 60000);
+    if (diff < 1) { icon.textContent = '☁️✅'; text.textContent = 'Sincronizado agora'; }
+    else if (diff < 60) { icon.textContent = '☁️✅'; text.textContent = 'Sync: '+diff+'min atrás'; }
+    else { icon.textContent = '☁️⚠️'; text.textContent = 'Sync: '+Math.floor(diff/60)+'h atrás'; }
+  } else {
+    icon.textContent = '☁️'; text.textContent = 'Aguardando sync...';
+  }
+}
+setInterval(atualizarSyncIndicator, 60000);
+
 function aplicarControleAcesso() {
   var admin = isAdmin();
   // Produtos: vendedor pode ver mas não cadastrar/excluir (custo/margem ocultos)
@@ -7601,7 +7560,21 @@ function saveVenda() {
   var subtotalCarrinho = _carrinho.reduce(function(s,item){ return s+(item.preco*item.qtd-(item.preco*item.qtd*(item.desc/100))); },0);
   var descGlobalPct = subtotalCarrinho>0?(descGlobal/subtotalCarrinho*100):0;
 
-  
+  const arr = load('vendas');
+  const prods = load('produtos');
+  const clis = load('clientes');
+  const data = document.getElementById('venda-data').value;
+  const pag = document.getElementById('venda-pag').value;
+  const parcelas = document.getElementById('venda-parcelas').value;
+  const status = document.getElementById('venda-status').value;
+  const vendedor = document.getElementById('venda-vendedor').value;
+
+  // Validar crediário
+  var crediarioData = null;
+  if (pag === 'Crediário Próprio') {
+    crediarioData = getCrediarioData();
+    if (crediarioData === false) { window._saveVendaEmAndamento = false; return; }
+  }
 
   let totalGeral = 0;
   const vendasCriadas = [];
