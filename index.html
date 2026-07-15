@@ -1478,6 +1478,7 @@ function instalarApp() {
 <div class="topbar">
 <h1>📈 Relatórios</h1>
 <div class="topbar-actions">
+<button class="btn btn-primary" onclick="exportarRelatorioPDF()" style="background:#0d2b4e" id="btn-exportar-pdf">📄 Exportar PDF</button>
 <select id="rel-periodo" onchange="renderRelatorios()" style="padding:8px 12px;border:2px solid var(--border);border-radius:8px;font-size:13px">
 <option value="hoje">Hoje</option>
 <option value="semana">Esta Semana</option>
@@ -2237,6 +2238,18 @@ function instalarApp() {
 <div class="form-group"><label>Preço Custo (R$) *</label><input id="prod-custo" min="0" placeholder="0.00" step="0.01" type="number"/></div>
 <div class="form-group"><label>Preço Venda (R$) *</label><input id="prod-venda" min="0" oninput="calcMargem()" placeholder="0.00" step="0.01" type="number"/></div>
 <div class="form-group"><label>Margem (%)</label><input id="prod-margem" readonly="" style="background:#f8fafc" type="text"/></div>
+<div class="form-group" style="grid-column:1/-1">
+<label>📷 Foto do Produto</label>
+<div style="display:flex;gap:10px;align-items:center">
+<img alt="" id="prod-foto-preview" src="" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:2px solid #dde3ee;display:none"/>
+<div style="flex:1">
+<input accept="image/*" id="prod-foto-input" onchange="onFotoChange()" style="display:none" type="file"/>
+<button class="btn btn-outline" onclick="document.getElementById('prod-foto-input').click()" style="font-size:12px" type="button">📷 Selecionar Foto</button>
+<button class="btn btn-outline" id="btn-remover-foto" onclick="removerFoto()" style="font-size:12px;display:none;color:#dc2626;border-color:#dc2626" type="button">🗑️ Remover</button>
+<input id="prod-foto" type="hidden"/>
+</div>
+</div>
+</div>
 </div>
 <div class="form-actions">
 <button class="btn btn-primary" onclick="saveProduto()">💾 Salvar</button>
@@ -2980,6 +2993,9 @@ function instalarApp() {
 <!-- Rodapé -->
 <div style="text-align:center;margin-top:12px;padding-top:8px;border-top:1px solid #e2e8f0;font-size:9px;color:#94a3b8;font-style:italic">
 Ótica Horizonte — CNPJ 64.448.745/0001-09 | Emitido em <span id="rec-rodape-data"></span>
+<div style="margin-top:8px;text-align:center">
+<img id="rec-qrcode" src="" alt="QR Code" style="width:60px;height:60px;display:none"/>
+</div>
 </div>
 </div>
 </div>
@@ -4592,6 +4608,112 @@ function delReceita(id) {
 }
 
 // ── PRODUTOS ─────────────────────────────────────────────────────
+// ── ETAPA 4: REFINAMENTOS ─────────────────────────────────────────────────
+
+// 25. Foto do produto
+function onFotoChange() {
+  var input = document.getElementById('prod-foto-input');
+  var preview = document.getElementById('prod-foto-preview');
+  var hidden = document.getElementById('prod-foto');
+  var btnRem = document.getElementById('btn-remover-foto');
+  if (!input.files || !input.files[0]) return;
+  var file = input.files[0];
+  if (file.size > 500000) { showToast('Foto muito grande! Use imagens até 500KB.','warning'); return; }
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    hidden.value = e.target.result;
+    preview.src = e.target.result;
+    preview.style.display = 'block';
+    if (btnRem) btnRem.style.display = '';
+  };
+  reader.readAsDataURL(file);
+}
+
+function removerFoto() {
+  document.getElementById('prod-foto').value = '';
+  document.getElementById('prod-foto-preview').src = '';
+  document.getElementById('prod-foto-preview').style.display = 'none';
+  document.getElementById('prod-foto-input').value = '';
+  var btnRem = document.getElementById('btn-remover-foto');
+  if (btnRem) btnRem.style.display = 'none';
+}
+
+function carregarFotoProduto(foto) {
+  var preview = document.getElementById('prod-foto-preview');
+  var hidden = document.getElementById('prod-foto');
+  var btnRem = document.getElementById('btn-remover-foto');
+  if (foto) {
+    hidden.value = foto;
+    preview.src = foto;
+    preview.style.display = 'block';
+    if (btnRem) btnRem.style.display = '';
+  } else {
+    removerFoto();
+  }
+}
+
+// 26. QR Code no recibo
+function gerarQRCode(texto) {
+  // Usar API pública de QR Code
+  return 'https://api.qrserver.com/v1/create-qr-code/?size=80x80&data='+encodeURIComponent(texto);
+}
+
+// 27. Exportar relatório em PDF
+function exportarRelatorioPDF() {
+  var admin = isAdmin();
+  var periodo = document.getElementById('rel-periodo')?.value || 'mes';
+  var vendas = load('vendas');
+  var clMap = Object.fromEntries(load('clientes').map(c=>[c.id,c.nome]));
+  var mesAtual = new Date().toISOString().slice(0,7);
+  var vendasFiltradas = periodo==='mes' ? vendas.filter(v=>(v.data||'').startsWith(mesAtual)) : vendas;
+  if (!admin) vendasFiltradas = vendasFiltradas.filter(function(v){ return (v.vendedor||'').toLowerCase() === (loadUser()?.nome||'').toLowerCase(); });
+  var totalVendas = vendasFiltradas.reduce((s,v)=>s+calcTotal(v),0);
+  var now = new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+
+  var html = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Relatório — Ótica Horizonte</title>'
+    +'<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Segoe UI,sans-serif;color:#1a2744;padding:20px}'
+    +'h1{color:#0d2b4e;font-size:20px;margin-bottom:4px}h2{color:#0d2b4e;font-size:14px;margin:16px 0 8px}'
+    +'table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px}'
+    +'th{background:#0d2b4e;color:#e8c96a;padding:8px;text-align:left}'
+    +'td{padding:7px 8px;border-bottom:1px solid #eef1f8}'
+    +'tr:nth-child(even) td{background:#f8faff}'
+    +'.total{font-size:16px;font-weight:800;color:#16a34a;text-align:right;margin-top:8px}'
+    +'.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:12px;border-bottom:3px solid #c9a84c}'
+    +'@media print{body{padding:0}@page{size:A4;margin:10mm}}'
+    +'</style></head><body>'
+    +'<div class="header"><div>'
+    +'<h1>Ótica Horizonte</h1>'
+    +'<div style="font-size:11px;color:#5a6a8a">CNPJ: 64.448.745/0001-09</div>'
+    +'<div style="font-size:11px;color:#5a6a8a">Rua Henrique Martins, 481 — Galeria Fábrica dos Óculos</div>'
+    +'</div><div style="text-align:right">'
+    +'<div style="font-size:14px;font-weight:700;color:#0d2b4e">Relatório de Vendas</div>'
+    +'<div style="font-size:11px;color:#5a6a8a">Emitido em: '+now+'</div>'
+    +'<div style="font-size:11px;color:#5a6a8a">Período: '+periodo+'</div>'
+    +'</div></div>'
+    +'<h2>📊 Resumo</h2>'
+    +'<table><thead><tr><th>Métrica</th><th>Valor</th></tr></thead><tbody>'
+    +'<tr><td>Total de Vendas</td><td><strong>'+vendasFiltradas.length+'</strong></td></tr>'
+    +'<tr><td>Receita Total</td><td><strong style="color:#16a34a">'+fmtMoney(totalVendas)+'</strong></td></tr>'
+    +'<tr><td>Ticket Médio</td><td>'+fmtMoney(vendasFiltradas.length?totalVendas/vendasFiltradas.length:0)+'</td></tr>'
+    +'</tbody></table>'
+    +'<h2>📋 Detalhamento de Vendas</h2>'
+    +'<table><thead><tr><th>Nº</th><th>Data</th><th>Cliente</th><th>Vendedor</th><th>Pagamento</th><th>Total</th><th>Status</th></tr></thead><tbody>'
+    +[...vendasFiltradas].reverse().map(function(v){
+      return '<tr><td>'+v.id+'</td><td>'+fmtDate(v.data)+'</td><td>'+(clMap[v.clienteId]||'—')+'</td><td>'+(v.vendedor||'—')+'</td><td>'+v.pag+'</td><td style="font-weight:700;color:#16a34a">'+fmtMoney(calcTotal(v))+'</td><td>'+v.status+'</td></tr>';
+    }).join('')
+    +'</tbody></table>'
+    +'<div class="total">Total: '+fmtMoney(totalVendas)+'</div>'
+    +'<div style="text-align:center;margin-top:30px;font-size:10px;color:#94a3b8">Ótica Horizonte — CNPJ 64.448.745/0001-09 | Relatório gerado em '+now+'</div>'
+    +'<div class="no-print" style="text-align:center;margin-top:20px">'
+    +'<button onclick="window.print()" style="padding:12px 32px;background:#0d2b4e;color:#e8c96a;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-weight:700">🖨️ Imprimir / Salvar PDF</button>'
+    +'<button onclick="window.close()" style="padding:12px 24px;background:#5a6a8a;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer;margin-left:10px">✕ Fechar</button>'
+    +'</div></body></html>';
+
+  var win = window.open('','_blank','width=900,height=700');
+  if (win) { win.document.write(html); win.document.close(); setTimeout(function(){ win.focus(); },300); }
+  else showToast('Permita popups para exportar!','warning');
+}
+
 function calcMargem() {
   const c = parseFloat(document.getElementById('prod-custo').value)||0;
   const v = parseFloat(document.getElementById('prod-venda').value)||0;
@@ -4615,7 +4737,7 @@ function renderProdutos() {
     const margem = p.venda>0 ? (p.venda-p.custo)/p.venda*100 : 0;
     const status = p.qtd <= p.min ? 'Repor' : 'OK';
     return `<tr>
-      <td><strong>${p.cod}</strong></td><td>${p.desc}</td>
+      <td><strong>${p.cod}</strong></td><td>${p.foto?`<img src="${p.foto}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;margin-right:6px;vertical-align:middle"/>`:''}${p.desc}</td>
       <td><span class="badge badge-info">${p.cat}</span></td>
       <td>${p.marca}</td>
       <td class="${p.qtd<=p.min?'text-danger fw-bold':'fw-bold'}">${p.qtd}</td>
@@ -4650,6 +4772,7 @@ function editProduto(cod) {
   document.getElementById('prod-custo').value = p.custo;
   document.getElementById('prod-venda').value = p.venda;
   calcMargem();
+  carregarFotoProduto(p.foto||'');
   openModal('modal-produto');
 }
 
@@ -6687,6 +6810,14 @@ function imprimirRecibo(id) {
     var statusColors = {'Pago':'background:#dcfce7;color:#16a34a','Pendente':'background:#fef3c7;color:#d97706','Cancelado':'background:#fee2e2;color:#dc2626'};
     badge.style.cssText = statusColors[v.status]||'background:#f1f5f9;color:#64748b';
     badge.textContent = v.status;
+  }
+
+  // QR Code com dados da venda
+  var qrEl = document.getElementById('rec-qrcode');
+  if (qrEl) {
+    var qrData = 'Ótica Horizonte | Venda: '+v.id+' | Cliente: '+(clMap[v.clienteId]||'—')+' | Total: '+fmtMoney(totalGrupo)+' | Data: '+fmtDate(v.data);
+    qrEl.src = gerarQRCode(qrData);
+    qrEl.style.display = 'block';
   }
 
   openModal('modal-recibo');
