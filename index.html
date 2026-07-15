@@ -1282,6 +1282,27 @@ function instalarApp() {
 <div id="dash-dre"></div>
 </div>
 </div>
+<!-- Meta de Vendas — só Admin -->
+<div class="card" id="card-meta-vendas" style="margin-bottom:20px;display:none">
+<div class="card-header" style="background:linear-gradient(135deg,#0d2b4e,#1a4a7a)">
+<h3 style="color:#e8c96a">🎯 Meta de Vendas — Este Mês</h3>
+</div>
+<div class="card-body" style="padding:0">
+<table><thead><tr><th>Vendedor</th><th>Realizado</th><th>Meta (R$)</th><th>Progresso</th></tr></thead>
+<tbody id="meta-vendas-body"></tbody></table>
+</div>
+</div>
+<!-- Inadimplência — só Admin -->
+<div class="card" id="card-inadimplencia" style="margin-bottom:20px;display:none">
+<div class="card-header" style="background:linear-gradient(135deg,#dc2626,#f87171)">
+<h3 style="color:white">⚠️ Inadimplência — Crediário Vencido</h3>
+<span id="inadimplencia-total" style="font-size:12px;color:rgba(255,255,255,.8)"></span>
+</div>
+<div class="card-body" style="padding:0">
+<table><thead><tr><th>Cliente</th><th>Parcelas</th><th>Total Vencido</th></tr></thead>
+<tbody id="inadimplencia-body"></tbody></table>
+</div>
+</div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
 <div class="card">
 <div class="card-header"><h3>💰 Últimas Vendas</h3></div>
@@ -3919,6 +3940,7 @@ function doLogin() {
   showSection('dashboard');
   initDark();
   checkOSAtrasadas();
+  checkReceitasVencendo();
   seedAgendamentos();
   seedComposicoes();
   if (!load('despesas').length && localStorage.getItem('otica_despesas')===null) save('despesas',[]);
@@ -4013,6 +4035,116 @@ function statusBadge(s) {
 }
 
 // ── DASHBOARD ────────────────────────────────────────────────────
+// ── ETAPA 3: MELHORIAS DE GESTÃO ──────────────────────────────────────────
+
+// 21. Alerta de receita médica vencendo
+function checkReceitasVencendo() {
+  var hoje = new Date().toISOString().slice(0,10);
+  var em30 = new Date(Date.now()+30*86400000).toISOString().slice(0,10);
+  var clMap = Object.fromEntries(load('clientes').map(c=>[c.id,c.nome]));
+  var receitas = load('receitas');
+  var vencendo = receitas.filter(function(r){ return r.validade && r.validade>=hoje && r.validade<=em30; });
+  var vencidas = receitas.filter(function(r){ return r.validade && r.validade<hoje; });
+  var el = document.getElementById('estoque-alert');
+  if (!el) return;
+  var alertas = el.innerHTML || '';
+  if (vencendo.length > 0) {
+    var msgVenc = vencendo.map(function(r){ return (clMap[r.clienteId]||'-')+' ('+fmtDate(r.validade)+')'; }).join(', ');
+    var divVenc = document.createElement('div');
+    divVenc.className = 'alert alert-warning';
+    divVenc.style.cursor = 'pointer';
+    divVenc.onclick = function(){ showSection('receitas'); };
+    divVenc.innerHTML = '<strong>'+vencendo.length+' receita(s) vencendo em 30 dias:</strong> '+msgVenc;
+    el.appendChild(divVenc);
+  }
+  if (vencidas.length > 0) {
+    var msgVencida = vencidas.map(function(r){ return clMap[r.clienteId]||'-'; }).join(', ');
+    var divVencida = document.createElement('div');
+    divVencida.className = 'alert alert-danger';
+    divVencida.innerHTML = '<strong>'+vencidas.length+' receita(s) vencida(s):</strong> '+msgVencida;
+    el.appendChild(divVencida);
+  }
+}
+
+// 20. Relatório de inadimplência
+function renderInadimplencia() {
+  var body = document.getElementById('inadimplencia-body');
+  if (!body) return;
+  var clMap = Object.fromEntries(load('clientes').map(c=>[c.id,c.nome]));
+  var hoje = new Date().toISOString().slice(0,10);
+  var vendas = load('vendas');
+  var inadimplentes = {};
+  vendas.forEach(function(v) {
+    if (v.crediario && v.crediario.parcelas) {
+      v.crediario.parcelas.forEach(function(p) {
+        if (p.status !== 'Pago' && p.data < hoje) {
+          var key = v.clienteId;
+          if (!inadimplentes[key]) inadimplentes[key] = {nome:clMap[v.clienteId]||'—', total:0, parcelas:0};
+          inadimplentes[key].total += p.valor;
+          inadimplentes[key].parcelas++;
+        }
+      });
+    }
+  });
+  var lista = Object.values(inadimplentes).sort((a,b)=>b.total-a.total);
+  var totalEl = document.getElementById('inadimplencia-total');
+  var totalGeral = lista.reduce((s,i)=>s+i.total,0);
+  if (totalEl) totalEl.textContent = 'Total: '+fmtMoney(totalGeral);
+  body.innerHTML = lista.length ? lista.map(function(i){
+    return '<tr><td><strong>'+i.nome+'</strong></td><td>'+i.parcelas+' parcela(s)</td><td class="fw-bold" style="color:#dc2626">'+fmtMoney(i.total)+'</td></tr>';
+  }).join('') : '<tr><td colspan="3" style="padding:16px;text-align:center;color:#16a34a;font-weight:600">✅ Nenhum inadimplente!</td></tr>';
+}
+
+// 23. Meta de vendas por vendedor
+function renderMetaVendas() {
+  var body = document.getElementById('meta-vendas-body');
+  if (!body) return;
+  var admin = isAdmin();
+  if (!admin) { body.innerHTML = ''; return; }
+  var metas = JSON.parse(localStorage.getItem('otica_metas_vendas')||'{}');
+  var vendas = load('vendas');
+  var mesAtual = new Date().toISOString().slice(0,7);
+  var vendasMes = vendas.filter(v=>(v.data||'').startsWith(mesAtual));
+  var porVendedor = {};
+  vendasMes.forEach(function(v){
+    var vend = v.vendedor||'Não informado';
+    if (!porVendedor[vend]) porVendedor[vend] = 0;
+    porVendedor[vend] += calcTotal(v);
+  });
+  body.innerHTML = Object.entries(porVendedor).map(function(entry){
+    var vend = entry[0], total = entry[1];
+    var meta = metas[vend.toLowerCase()] || 0;
+    var pct = meta > 0 ? Math.min(100, total/meta*100) : 0;
+    var cor = pct>=100?'#16a34a':pct>=70?'#d97706':'#dc2626';
+    var tr = document.createElement('tr');
+    var tdNome = document.createElement('td'); tdNome.innerHTML = '<strong>'+vend+'</strong>'; tr.appendChild(tdNome);
+    var tdReal = document.createElement('td'); tdReal.textContent = fmtMoney(total); tr.appendChild(tdReal);
+    var tdMeta = document.createElement('td');
+    var inp = document.createElement('input');
+    inp.type='number'; inp.value=meta||''; inp.placeholder='Definir meta';
+    inp.style.cssText='width:120px;padding:4px 8px;border:1px solid #dde3ee;border-radius:6px;font-size:12px';
+    inp.dataset.vend = vend.toLowerCase();
+    inp.addEventListener('change', function(){ salvarMeta(this.dataset.vend, this.value); });
+    tdMeta.appendChild(inp); tr.appendChild(tdMeta);
+    var tdProg = document.createElement('td');
+    if (meta>0) {
+      tdProg.innerHTML = '<div style="background:#f1f5f9;border-radius:20px;height:8px;overflow:hidden"><div style="background:'+cor+';height:100%;width:'+pct+'%;transition:width .3s"></div></div><span style="font-size:11px;color:'+cor+';font-weight:700">'+pct.toFixed(0)+'%</span>';
+    } else {
+      tdProg.innerHTML = '<span style="color:#94a3b8;font-size:11px">Sem meta</span>';
+    }
+    tr.appendChild(tdProg);
+    return tr.outerHTML;
+  }).join('') || '<tr><td colspan="4" style="padding:16px;text-align:center;color:var(--text-muted)">Nenhuma venda este mês</td></tr>';
+}
+
+function salvarMeta(vendedor, valor) {
+  var metas = JSON.parse(localStorage.getItem('otica_metas_vendas')||'{}');
+  metas[vendedor] = parseFloat(valor)||0;
+  localStorage.setItem('otica_metas_vendas', JSON.stringify(metas));
+  showToast('Meta salva!','success');
+  renderMetaVendas();
+}
+
 function renderDashboard() {
   if(!document.getElementById('dash-cards')) return;
   renderGraficos();
@@ -4051,6 +4183,24 @@ function renderDashboard() {
 
   // Painel Financeiro Admin
   renderPainelFinanceiroAdmin();
+
+  // Meta de vendas e inadimplência — só admin
+  var adminDash = isAdmin();
+  var cardMeta = document.getElementById('card-meta-vendas');
+  var cardInad = document.getElementById('card-inadimplencia');
+  if (cardMeta) { cardMeta.style.display = adminDash ? 'block' : 'none'; if(adminDash) renderMetaVendas(); }
+  if (cardInad) { cardInad.style.display = adminDash ? 'block' : 'none'; if(adminDash) renderInadimplencia(); }
+
+  // Cards simplificados para vendedor
+  if (!adminDash) {
+    var dashCards = document.getElementById('dash-cards');
+    if (dashCards) {
+      dashCards.innerHTML =
+        '<div class="stat-card"><div class="label">Clientes Ativos</div><div class="value">'+clientes.length+'</div><div class="sub">cadastrados</div></div>'+
+        '<div class="stat-card orange"><div class="label">OS em Aberto</div><div class="value">'+osAberto+'</div><div class="sub">aguardando</div></div>'+
+        '<div class="stat-card '+(baixoEstoque>0?'red':'green')+'"><div class="label">Estoque Baixo</div><div class="value">'+baixoEstoque+'</div><div class="sub">produtos</div></div>';
+    }
+  }
 }
 
 function getFiltroVendasAdmin(filtro) {
@@ -5780,6 +5930,7 @@ function initDark() {
 function checkOSAtrasadas() {
   const el = document.getElementById('estoque-alert');
   if (!el) return;
+  el.innerHTML = ''; // Limpar antes de recriar
   const hoje = new Date(); hoje.setHours(0,0,0,0);
   const hojeStr = new Date().toISOString().slice(0,10);
   const clMap = Object.fromEntries(load('clientes').map(c=>[c.id,c.nome]));
@@ -6371,18 +6522,28 @@ function renderComissoes() {
 function verHistorico(id) {
   const c = load('clientes').find(x=>x.id===id);
   if (!c) return;
-  if (c.status === 'Inativo') { showToast('Cliente inativo — histórico disponível apenas para clientes ativos.','warning'); return; }
   const vendas = load('vendas').filter(v=>v.clienteId===id);
   const os = load('os').filter(o=>o.clienteId===id);
   const receitas = load('receitas').filter(r=>r.clienteId===id);
   const agend = load('agendamentos').filter(a=>a.clienteId===id);
   const prodMap = Object.fromEntries(load('produtos').map(p=>[p.cod,p.desc]));
-  const totalGasto = vendas.reduce((s,v)=>s+calcTotal(v),0) + os.reduce((s,o)=>s+(o.valor||0),0);
+  const totalGasto = vendas.reduce((s,v)=>s+calcTotal(v),0) + os.filter(o=>o.tipoOS!=='montagem').reduce((s,o)=>s+(o.valor||0),0);
+  // Crediário pendente
+  var credPendente = 0;
+  vendas.forEach(function(v){ if(v.crediario) v.crediario.parcelas.forEach(function(p){ if(p.status!=='Pago') credPendente+=p.valor; }); });
+  // Receita vencendo (próximos 30 dias)
+  var hoje = new Date().toISOString().slice(0,10);
+  var em30 = new Date(Date.now()+30*86400000).toISOString().slice(0,10);
+  var receitaVencendo = receitas.filter(r=>r.validade && r.validade>=hoje && r.validade<=em30);
+  var receitaVencida = receitas.filter(r=>r.validade && r.validade<hoje);
 
   document.getElementById('modal-hist-title').textContent = `🔍 Histórico — ${c.nome}`;
   document.getElementById('hist-body').innerHTML = `
     <div style="padding:20px">
       <!-- Resumo -->
+      ${receitaVencendo.length>0?`<div style="background:#fef9ec;border:1px solid #c9a84c;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#92400e">⚠️ <strong>Receita vencendo em breve!</strong> Válida até ${fmtDate(receitaVencendo[0].validade)} — considere agendar retorno.</div>`:''}
+      ${receitaVencida.length>0?`<div style="background:#fff0f0;border:1px solid #dc2626;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#991b1b">🔴 <strong>Receita vencida!</strong> Venceu em ${fmtDate(receitaVencida[0].validade)} — cliente precisa de nova consulta.</div>`:''}
+      ${credPendente>0?`<div style="background:#fef3c7;border:1px solid #d97706;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#92400e">💳 <strong>Crediário pendente: ${fmtMoney(credPendente)}</strong></div>`:''}
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
         <div class="stat-card"><div class="label">Vendas</div><div class="value">${vendas.length}</div></div>
         <div class="stat-card green"><div class="label">OS</div><div class="value">${os.length}</div></div>
