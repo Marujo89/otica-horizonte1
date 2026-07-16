@@ -1193,6 +1193,25 @@ function instalarApp() {
 </div>
 <div id="estoque-alert"></div>
 <div class="cards-grid" id="dash-cards"></div>
+<div id="dash-painel-financeiro" style="display:none;margin-bottom:20px">
+<div style="background:#0f2744;border-radius:14px;padding:16px">
+<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px">
+<div style="font-size:14px;font-weight:700;color:#fff">🔒 Painel Financeiro — Gestão (Admin)</div>
+<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+<select id="dash-fin-filtro" onchange="renderPainelFinanceiroAdmin()" style="background:#1a3a5c;border:1px solid #2d6a9f;color:#fff;border-radius:8px;padding:5px 10px;font-size:12px;outline:none;cursor:pointer">
+<option value="hoje">Hoje</option>
+<option value="semana">Últimos 7 dias</option>
+<option selected="" value="mes">Este Mês</option>
+<option value="custom">Personalizado</option>
+</select>
+<div id="dash-fin-custom" style="display:none;gap:6px;align-items:center">
+<input id="dash-fin-de" onchange="renderPainelFinanceiroAdmin()" style="background:#1a3a5c;border:1px solid #2d6a9f;color:#fff;border-radius:6px;padding:4px 8px;font-size:12px;outline:none" type="date"/>
+<span style="color:#94a3b8;font-size:12px">até</span>
+<input id="dash-fin-ate" onchange="renderPainelFinanceiroAdmin()" style="background:#1a3a5c;border:1px solid #2d6a9f;color:#fff;border-radius:6px;padding:4px 8px;font-size:12px;outline:none" type="date"/>
+</div>
+</div>
+</div>
+<div id="dash-fin-cards" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px"></div>
 <!-- Gráficos -->
 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px">
 <div class="card">
@@ -1225,25 +1244,7 @@ function instalarApp() {
 </div>
 </div>
 <!-- Painel Financeiro Admin -->
-<div id="dash-painel-financeiro" style="display:none;margin-bottom:20px">
-<div style="background:#0f2744;border-radius:14px;padding:16px">
-<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px">
-<div style="font-size:14px;font-weight:700;color:#fff">🔒 Painel Financeiro — Gestão (Admin)</div>
-<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-<select id="dash-fin-filtro" onchange="renderPainelFinanceiroAdmin()" style="background:#1a3a5c;border:1px solid #2d6a9f;color:#fff;border-radius:8px;padding:5px 10px;font-size:12px;outline:none;cursor:pointer">
-<option value="hoje">Hoje</option>
-<option value="semana">Últimos 7 dias</option>
-<option selected="" value="mes">Este Mês</option>
-<option value="custom">Personalizado</option>
-</select>
-<div id="dash-fin-custom" style="display:none;gap:6px;align-items:center">
-<input id="dash-fin-de" onchange="renderPainelFinanceiroAdmin()" style="background:#1a3a5c;border:1px solid #2d6a9f;color:#fff;border-radius:6px;padding:4px 8px;font-size:12px;outline:none" type="date"/>
-<span style="color:#94a3b8;font-size:12px">até</span>
-<input id="dash-fin-ate" onchange="renderPainelFinanceiroAdmin()" style="background:#1a3a5c;border:1px solid #2d6a9f;color:#fff;border-radius:6px;padding:4px 8px;font-size:12px;outline:none" type="date"/>
-</div>
-</div>
-</div>
-<div id="dash-fin-cards" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px"></div>
+
 <div id="dash-dre"></div>
 </div>
 </div>
@@ -4237,9 +4238,14 @@ function renderDashboard() {
     <td class="fw-bold text-success">${fmtMoney(calcTotal(v))}</td><td>${statusBadge(v.status)}</td></tr>
   `).join('') || '<tr><td colspan="5" class="text-center" style="padding:20px;color:var(--text-muted)">Nenhuma venda</td></tr>';
   // OS em aberto
-  document.getElementById('dash-os').innerHTML = os.filter(o=>o.status!=='Entregue'&&o.status!=='Cancelada').slice(0,5).map(o => `
-    <tr><td><strong>${o.id}</strong></td><td>${clMap[o.clienteId]||'-'}</td><td>${o.tipo}</td><td>${statusBadge(o.status)}</td></tr>
-  `).join('') || '<tr><td colspan="4" class="text-center" style="padding:20px;color:var(--text-muted)">Nenhuma OS em aberto</td></tr>';
+  // OS em aberto — só admin vê
+  var cardDashOS2 = document.getElementById('card-dash-os');
+  if (cardDashOS2) cardDashOS2.style.display = adminDash ? '' : 'none';
+  if (adminDash) {
+    document.getElementById('dash-os').innerHTML = os.filter(o=>o.status!=='Entregue'&&o.status!=='Cancelada').slice(0,5).map(o => `
+      <tr><td><strong>${o.id}</strong></td><td>${clMap[o.clienteId]||'-'}</td><td>${o.tipo}</td><td>${statusBadge(o.status)}</td></tr>
+    `).join('') || '<tr><td colspan="4" class="text-center" style="padding:20px;color:var(--text-muted)">Nenhuma OS em aberto</td></tr>';
+  }
 
   // Painel Financeiro Admin
   renderPainelFinanceiroAdmin();
@@ -4874,12 +4880,14 @@ function calcMargem() {
 }
 
 function renderProdutos() {
+  var adminProd = isAdmin();
+  // Histórico só para admin
   var card = document.getElementById('card-historico-estoque');
+  if (card) card.style.display = adminProd ? '' : 'none';
   if (card && card.style.display !== 'none') renderHistoricoEstoque();
   if(!document.getElementById('tb-produtos')) return;
-  var isAdmin = (function(){ var u=loadUser(); return u&&(u.nivel==='Admin'||u.nome==='Administrador'); })();
   // Ocultar colunas de custo e margem para vendedor
-  document.querySelectorAll('.col-custo-prod,.col-margem-prod').forEach(function(el){ el.style.display=isAdmin?'':'none'; });
+  document.querySelectorAll('.col-custo-prod,.col-margem-prod').forEach(function(el){ el.style.display=adminProd?'':'none'; });
   const q = (document.getElementById('search-produtos')||{}).value||'';
   const data = load('produtos').filter(p =>
     !q || p.cod.toLowerCase().includes(q.toLowerCase()) ||
@@ -5406,22 +5414,47 @@ function fecharModalVenda() {
 }
 
 function delVenda(id) {
-  if (!confirm('Excluir esta venda?')) return;
+  var v = load('vendas').find(x=>x.id===id);
+  if (!v) return;
+  var clMap = Object.fromEntries(load('clientes').map(c=>[c.id,c.nome]));
+  var msg = 'ATENCAO! Voce esta prestes a EXCLUIR permanentemente:'
+    + ' Venda: ' + id
+    + ' | Cliente: ' + (clMap[v.clienteId]||'-')
+    + ' | Valor: ' + fmtMoney(calcTotal(v))
+    + ' | Data: ' + fmtDate(v.data)
+    + ' | Esta acao NAO pode ser desfeita!'
+    + ' | Digite EXCLUIR para confirmar:';
+  var confirmacao = prompt(msg);
+  if (confirmacao !== 'EXCLUIR') {
+    if (confirmacao !== null) showToast('Exclusão cancelada — digite EXCLUIR para confirmar','warning');
+    return;
+  }
   save('vendas', load('vendas').filter(v=>v.id!==id));
   renderVendas();
-  showToast('Venda excluída!','warning');
+  showToast('Venda ' + id + ' excluída!','warning');
 }
 
 // ── OS ───────────────────────────────────────────────────────────
 function renderOS() {
   if(!document.getElementById('tb-os')) return;
+  var adminOS2 = isAdmin();
+  var userOS = loadUser();
+  var meuNomeOS = userOS ? (userOS.nome||'').toLowerCase() : '';
   const clMap = Object.fromEntries(load('clientes').map(c=>[c.id,c.nome]));
   const q = (document.getElementById('search-os')||{}).value||'';
-  const data = load('os').filter(o =>
-    !q || o.id.toLowerCase().includes(q.toLowerCase()) ||
-    (clMap[o.clienteId]||'').toLowerCase().includes(q.toLowerCase()) ||
-    o.status.toLowerCase().includes(q.toLowerCase())
-  );
+  // Vendedor vê apenas OS das suas próprias vendas
+  var todasOS = load('os');
+  var minhasVendas = new Set();
+  if (!adminOS2) {
+    load('vendas').filter(function(v){ return (v.vendedor||'').toLowerCase()===meuNomeOS; })
+      .forEach(function(v){ if(v.id) minhasVendas.add(v.id); });
+  }
+  const data = todasOS.filter(o => {
+    if (!adminOS2 && !minhasVendas.has(o.vendaRef)) return false;
+    return !q || o.id.toLowerCase().includes(q.toLowerCase()) ||
+      (clMap[o.clienteId]||'').toLowerCase().includes(q.toLowerCase()) ||
+      o.status.toLowerCase().includes(q.toLowerCase());
+  });
   const aberto = data.filter(o=>o.status!=='Entregue'&&o.status!=='Cancelada').length;
   // Faturamento exclui OS de montagem (valor já cobrado na venda)
   const dataConserto = data.filter(o=>o.tipoOS!=='montagem');
@@ -5447,8 +5480,8 @@ function renderOS() {
       <td>${statusBadge(o.status)}</td>
       <td><div class="flex gap-2">
         ${isAdmin()?`<button class="btn btn-sm btn-outline" onclick="viewOS('${o.id}')" data-tip="Ver detalhes da OS">👁️</button>`:''}
-        <button class="btn btn-sm btn-warning" onclick="editOS('${o.id}')" data-tip="Editar OS">✏️</button>
-        <button class="btn btn-sm btn-danger" onclick="delOS('${o.id}')" data-tip="Excluir OS">🗑️</button>
+        ${isAdmin()?`<button class="btn btn-sm btn-warning" onclick="editOS('${o.id}')" data-tip="Editar OS">✏️</button>`:''}
+        ${isAdmin()?`<button class="btn btn-sm btn-danger" onclick="delOS('${o.id}')" data-tip="Excluir OS">🗑️</button>`:''}
       </div></td>
     </tr>`).join('') : '<tr><td colspan="8" class="text-center" style="padding:30px;color:var(--text-muted)">Nenhuma OS encontrada</td></tr>';
 }
@@ -6439,6 +6472,14 @@ function delAgendamento(id) {
 // ── MÓDULO DE USUÁRIOS ────────────────────────────────────────────────────
 function getUsuarios() {
   var salvos = JSON.parse(localStorage.getItem('otica_usuarios')||'null');
+  // Garantir que usuários padrão sempre existem
+  if (salvos) {
+    var temAdmin = salvos.find(function(u){ return u.login==='admin'; });
+    var temVendedor = salvos.find(function(u){ return u.login==='vendedor'; });
+    if (!temAdmin) salvos.unshift({id:1,nome:'Administrador',login:'admin',senha:'admin123',nivel:'Admin',comissao:0,status:'Ativo'});
+    if (!temVendedor) salvos.push({id:2,nome:'Vendedor Padrão',login:'vendedor',senha:'venda123',nivel:'Vendedor',comissao:5,status:'Ativo'});
+    localStorage.setItem('otica_usuarios', JSON.stringify(salvos));
+  }
   if (!salvos) {
     // Inicializar com usuários padrão + 4 vendedores fictícios
     salvos = [
