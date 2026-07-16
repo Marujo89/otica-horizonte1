@@ -506,11 +506,12 @@
   /* ══════════════════════════════════════════════
      GRÁFICOS
   ══════════════════════════════════════════════ */
-  .chart-bar { display: flex; align-items: flex-end; gap: 6px; height: 100px; padding: 0 4px; }
+  .chart-bar { display: flex; align-items: flex-end; gap: 4px; height: 120px; padding: 0 4px; }
   .chart-bar-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; }
-  .chart-bar-fill { width: 100%; background: var(--primary); border-radius: 4px 4px 0 0; min-height: 4px; transition: height .3s; }
-  .chart-bar-label { font-size: 9px; color: var(--text-muted); text-align: center; }
-  .chart-bar-value { font-size: 9px; font-weight: 700; color: var(--primary); }
+  .chart-bar-fill { width: 100%; background: linear-gradient(180deg,#c9a84c,#0d2b4e); border-radius: 6px 6px 0 0; min-height: 4px; transition: all .4s cubic-bezier(.4,0,.2,1); box-shadow: 0 2px 8px rgba(201,168,76,.3); }
+  .chart-bar-fill:hover { filter: brightness(1.2); transform: scaleY(1.02); transform-origin: bottom; }
+  .chart-bar-label { font-size: 9px; color: var(--text-muted); text-align: center; font-weight: 600; }
+  .chart-bar-value { font-size: 9px; font-weight: 800; color: #c9a84c; }
 
   /* ══════════════════════════════════════════════
      CALENDÁRIO
@@ -1283,7 +1284,7 @@ function instalarApp() {
 <div class="topbar">
 <h1>👥 Clientes</h1>
 <div class="topbar-actions">
-<button class="btn btn-primary" onclick="openModal('modal-cliente')">➕ Novo Cliente</button>
+<button class="btn btn-primary" id="btn-novo-cliente" onclick="openModal('modal-cliente')">➕ Novo Cliente</button>
 </div>
 </div>
 <div class="card">
@@ -4359,12 +4360,21 @@ function renderPainelFinanceiroAdmin() {
 
   // Comissão total — apenas vendedores (admin não conta)
   var cfg = window._comissaoVendedor || JSON.parse(localStorage.getItem('otica_config_comissao')||'{}');
-  var userAtualAdmin = loadUser();
+  var usuarios = getUsuarios ? getUsuarios() : [];
   var comissaoTotal = vendas.reduce(function(s,v){
     var vendedorNome = (v.vendedor||'').toLowerCase();
     // Não contar comissão do administrador
     if (vendedorNome === 'administrador' || vendedorNome === 'admin') return s;
-    var pct = cfg[vendedorNome] || cfg['default'] || 0;
+    // Buscar % pelo nome completo OU pelo login
+    var pct = 0;
+    // 1. Tentar pelo nome completo (ex: "Carlos Mendes" → buscar usuário com esse nome)
+    var usuarioEncontrado = usuarios.find(function(u){ return (u.nome||'').toLowerCase() === vendedorNome; });
+    if (usuarioEncontrado) {
+      pct = usuarioEncontrado.comissao || cfg[usuarioEncontrado.login] || 0;
+    } else {
+      // 2. Tentar pelo login direto
+      pct = cfg[vendedorNome] || cfg['default'] || 0;
+    }
     return s + calcTotal(v)*(pct/100);
   },0);
 
@@ -4559,11 +4569,8 @@ function aplicarControleAcesso() {
   var btnNovoProd = document.getElementById('btn-novo-produto');
   if (btnNovoProd) btnNovoProd.style.display = admin ? '' : 'none';
 
-  // Botão Novo Cliente — só admin
-  document.querySelectorAll('.btn-primary').forEach(function(btn) {
-    var oc = btn.getAttribute('onclick') || '';
-    if (oc.indexOf('modal-cliente') !== -1) btn.style.display = admin ? '' : 'none';
-  });
+  // Botão Novo Cliente — visível para todos (vendedor pode cadastrar)
+  // Não ocultar — vendedor pode cadastrar e editar clientes
 
   // Painel financeiro dashboard — só admin
   var painelFin = document.getElementById('dash-painel-financeiro');
@@ -7296,11 +7303,12 @@ function renderGraficos() {
   const maxVal = Math.max(...meses.map(m=>m.total),1);
   const chartEl = document.getElementById('chart-vendas-mes');
   if (chartEl) {
+    var mesAtualKey = (function(){ var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); })();
     chartEl.innerHTML = meses.map(m=>`
-      <div class="chart-bar-item">
-        <div class="chart-bar-value">${m.total>0?'R$'+Math.round(m.total/1000)+'k':''}</div>
-        <div class="chart-bar-fill" style="height:${Math.max(m.total/maxVal*100,4)}px;background:${m.key===new Date().toISOString().slice(0,7)?'#0ea5e9':'#1a3a5c'}"></div>
-        <div class="chart-bar-label">${m.label}</div>
+      <div class="chart-bar-item" title="${m.label}: ${fmtMoney(m.total)} (${m.qtd} vendas)">
+        <div class="chart-bar-value" style="color:${m.key===mesAtualKey?'#c9a84c':'#64748b'}">${m.total>0?'R$'+Math.round(m.total/1000)+'k':''}</div>
+        <div class="chart-bar-fill" style="height:${Math.max(m.total/maxVal*100,4)}px;background:${m.key===mesAtualKey?'linear-gradient(180deg,#e8c96a,#c9a84c)':'linear-gradient(180deg,#2d6cdf,#0d2b4e)'}"></div>
+        <div class="chart-bar-label" style="color:${m.key===mesAtualKey?'#c9a84c':'var(--text-muted)'};font-weight:${m.key===mesAtualKey?'800':'600'}">${m.label}</div>
       </div>`).join('');
   }
 
