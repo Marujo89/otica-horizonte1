@@ -2293,12 +2293,12 @@ function instalarApp() {
 <div class="modal-overlay" id="modal-venda" style="display:none">
 <div class="modal" style="max-width:100vw;width:100vw;height:100dvh;max-height:100dvh;padding:0;overflow:hidden;border-radius:0;margin:0">
 <!-- BARRA SUPERIOR -->
-<div style="background:linear-gradient(135deg,#0d2b4e,#1a4a7a);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;border-radius:14px 14px 0 0;border-bottom:2px solid #c9a84c">
-<h3 style="color:#e8c96a;font-size:16px;margin:0;font-weight:800">💰 Nova Venda</h3>
+<div style="background:linear-gradient(135deg,#0d2b4e,#1a4a7a);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;border-radius:14px 14px 0 0;border-bottom:2px solid #c9a84c">
+<h3 style="color:#e8c96a;font-size:18px;margin:0;font-weight:800">💰 Nova Venda</h3>
 <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
 <div style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);border:1px solid rgba(201,168,76,.3);border-radius:8px;padding:5px 10px">
 <span style="color:#c9a84c;font-size:11px">👤</span>
-<select id="venda-cliente" style="background:#0d2b4e;border:none;color:#fff;font-size:12px;font-weight:600;outline:none;cursor:pointer;min-width:150px;border-radius:4px;padding:2px 4px">
+<select id="venda-cliente" style="background:#0d2b4e;border:none;color:#fff;font-size:13px;font-weight:700;outline:none;cursor:pointer;min-width:170px;border-radius:4px;padding:3px 6px">
 <option value="">— Selecione o cliente —</option>
 </select>
 </div>
@@ -2317,9 +2317,9 @@ function instalarApp() {
 </div>
 <div style="display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.12);border:1px solid rgba(201,168,76,.3);border-radius:8px;padding:5px 10px">
 <span style="color:#c9a84c;font-size:11px">🏷️</span>
-<input id="venda-vendedor" placeholder="Vendedor" style="background:transparent;border:none;color:#fff;font-size:11px;outline:none;width:100px" type="text"/>
+<input id="venda-vendedor" placeholder="Vendedor" style="background:transparent;border:none;color:#fff;font-size:12px;font-weight:600;outline:none;width:120px" type="text"/>
 </div>
-<select id="venda-status" style="background:#0d2b4e;border:1px solid rgba(201,168,76,.3);color:#fff;font-size:11px;border-radius:8px;padding:5px 8px;outline:none;cursor:pointer">
+<select id="venda-status" style="background:#0d2b4e;border:1px solid rgba(201,168,76,.3);color:#fff;font-size:12px;border-radius:8px;padding:6px 10px;outline:none;cursor:pointer;font-weight:600">
 <option>Pago</option><option>Pendente</option><option>Cancelado</option>
 </select>
 <button onclick="fecharModalVenda()" style="color:white;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);border-radius:50%;width:28px;height:28px;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0" title="Fechar venda">✕</button>
@@ -4963,7 +4963,7 @@ function renderProdutos() {
       <td><div class="flex gap-2">
         ${isAdmin()?`<button class="btn btn-sm btn-outline" onclick="editProduto('${p.cod}')" data-tip="Editar produto">✏️</button>`:''}
         ${isAdmin()?`<button class="btn btn-sm btn-success" onclick="entradaEstoque('${p.cod}')" data-tip="Entrada de estoque">📥</button>`:''}
-        ${isAdmin?`<button class="btn btn-sm btn-danger" onclick="delProduto('${p.cod}')" data-tip="Excluir produto">🗑️</button>`:''}
+        ${isAdmin()?`<button class="btn btn-sm btn-danger" onclick="delProduto('${p.cod}')" data-tip="Excluir produto">🗑️</button>`:''}
       </div></td>
     </tr>`;
   }).join('') : `<tr><td colspan="${isAdmin?11:9}" class="text-center" style="padding:30px;color:var(--text-muted)">Nenhum produto encontrado</td></tr>`;
@@ -7305,8 +7305,8 @@ function renderGraficos() {
   if (chartEl) {
     var mesAtualKey = (function(){ var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); })();
     chartEl.innerHTML = meses.map(m=>`
-      <div class="chart-bar-item" title="${m.label}: ${fmtMoney(m.total)} (${m.qtd} vendas)">
-        <div class="chart-bar-value" style="color:${m.key===mesAtualKey?'#c9a84c':'#64748b'}">${m.total>0?'R$'+Math.round(m.total/1000)+'k':''}</div>
+      <div class="chart-bar-item" title="${m.label}: ${fmtMoney(m.total)}${m.qtd>0?' ('+m.qtd+' vendas)':''}">
+        <div class="chart-bar-value" style="color:${m.key===mesAtualKey?'#c9a84c':'#64748b'}">${m.total>0?fmtMoney(m.total).replace('R$ ','R$'):''}</div>
         <div class="chart-bar-fill" style="height:${Math.max(m.total/maxVal*100,4)}px;background:${m.key===mesAtualKey?'linear-gradient(180deg,#e8c96a,#c9a84c)':'linear-gradient(180deg,#2d6cdf,#0d2b4e)'}"></div>
         <div class="chart-bar-label" style="color:${m.key===mesAtualKey?'#c9a84c':'var(--text-muted)'};font-weight:${m.key===mesAtualKey?'800':'600'}">${m.label}</div>
       </div>`).join('');
