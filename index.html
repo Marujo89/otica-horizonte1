@@ -4339,7 +4339,8 @@ function renderDashboard() {
   var adminDash = isAdmin();
   var cardMeta = document.getElementById('card-meta-vendas');
   var cardInad = document.getElementById('card-inadimplencia');
-  if (cardMeta) { cardMeta.style.display = adminDash ? 'block' : 'none'; if(adminDash) renderMetaVendas(); }
+  // Meta: admin vê todos, vendedor vê o próprio progresso
+  if (cardMeta) { cardMeta.style.display = 'block'; renderMetaVendas(); }
   if (cardInad) { cardInad.style.display = adminDash ? 'block' : 'none'; if(adminDash) renderInadimplencia(); }
 
   // Cards simplificados para vendedor
@@ -7195,7 +7196,13 @@ function imprimirRecibo(id) {
   // QR Code com dados da venda
   var qrEl = document.getElementById('rec-qrcode');
   if (qrEl) {
-    var qrData = 'Ótica Horizonte | Venda: '+v.id+' | Cliente: '+(clMap[v.clienteId]||'—')+' | Total: '+fmtMoney(totalGrupo)+' | Data: '+fmtDate(v.data);
+    var qrData = 'OTICA HORIZONTE'+
+    ' | Venda: '+v.id+
+    ' | Cliente: '+(clMap[v.clienteId]||'-')+
+    ' | Total: '+fmtMoney(totalGrupo)+
+    ' | Data: '+fmtDate(v.data)+
+    ' | Status: '+(v.status||'Pago')+
+    ' | CNPJ: 64.448.745/0001-09';
     qrEl.src = gerarQRCode(qrData);
     qrEl.style.display = 'block';
   }
