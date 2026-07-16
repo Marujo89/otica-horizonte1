@@ -3750,7 +3750,31 @@ window.addEventListener('firebaseReady', function() {
   }
 });
 const load = k => JSON.parse(localStorage.getItem(KEYS[k]) || '[]');
-const save = (k,v) => localStorage.setItem(KEYS[k], JSON.stringify(v));
+// Save com sync IMEDIATO para dados críticos
+const _saveBase = (k,v) => localStorage.setItem(KEYS[k], JSON.stringify(v));
+const save = function(k, v) {
+  _saveBase(k, v);
+  var criticos = ['vendas','os','produtos','clientes','receitas','agendamentos','despesas','composicoes'];
+  if (window._firebaseReady && window._fb && criticos.indexOf(k) !== -1) {
+    window._fb.saveCollection(k, v).then(function(ok) {
+      if (ok) {
+        localStorage.setItem('otica_ultimo_sync', Date.now().toString());
+        if (typeof atualizarSyncIndicator === 'function') atualizarSyncIndicator();
+        if (typeof mostrarConfirmacaoSync === 'function') mostrarConfirmacaoSync();
+      }
+    });
+  }
+};
+// Sync periódico a cada 30 minutos
+setInterval(async function() {
+  if (window._firebaseReady && window._fb && loadUser()) {
+    var ok = await window._fb.syncToCloud(KEYS);
+    if (ok > 0) {
+      localStorage.setItem('otica_ultimo_sync', Date.now().toString());
+      if (typeof atualizarSyncIndicator === 'function') atualizarSyncIndicator();
+    }
+  }
+}, 30 * 60 * 1000);
 const loadUser = () => JSON.parse(localStorage.getItem(KEYS.user) || 'null');
 const saveUser = v => localStorage.setItem(KEYS.user, JSON.stringify(v));
 
@@ -4473,6 +4497,17 @@ document.addEventListener('input', function(e) {
 // Limpar pendente quando salva
 var _saveOriginalBase = save;
 
+function mostrarConfirmacaoSync() {
+  var icon = document.getElementById('sync-icon');
+  var text = document.getElementById('sync-text');
+  if (icon) icon.textContent = '☁️✅';
+  if (text) {
+    text.textContent = 'Salvo na nuvem!';
+    text.style.color = 'rgba(52,211,153,.9)';
+    setTimeout(function() { text.style.color = ''; atualizarSyncIndicator(); }, 3000);
+  }
+}
+
 function atualizarSyncIndicator() {
   var icon = document.getElementById('sync-icon');
   var text = document.getElementById('sync-text');
@@ -4558,8 +4593,8 @@ function renderClientes() {
       <td class="fw-bold text-success">${fmtMoney(c.totalGasto)}</td>
       <td>${statusBadge(c.status)}</td>
       <td><div class="flex gap-2">
-        <button class="btn btn-sm btn-info" onclick="verHistorico(${c.id})" style="background:#0ea5e9;color:white" data-tip="Ver histórico do cliente">🔍</button>
-        <button class="btn btn-sm btn-outline" onclick="editCliente(${c.id})" data-tip="Editar cliente">✏️</button>
+        ${isAdmin()?`<button class="btn btn-sm btn-info" onclick="verHistorico(${c.id})" style="background:#0ea5e9;color:white" data-tip="Ver histórico do cliente">🔍</button>`:''}
+        ${isAdmin()?`<button class="btn btn-sm btn-outline" onclick="editCliente(${c.id})" data-tip="Editar cliente">✏️</button>`:''}
         ${isAdmin()?`<button class="btn btn-sm btn-danger" onclick="delCliente(${c.id})" data-tip="Excluir cliente">🗑️</button>`:''}
       </div></td>
     </tr>`).join('') : '<tr><td colspan="9" class="text-center" style="padding:30px;color:var(--text-muted)">Nenhum cliente encontrado</td></tr>';
@@ -5958,7 +5993,12 @@ function renderRelatorios() {
         total: 0, qtd: 0
       });
     }
-    todasVendas.forEach(function(v) {
+    // Filtrar por vendedor se não for admin
+    var adminRelGraf = isAdmin();
+    var userRelGraf = loadUser();
+    var meuNomeRelGraf = userRelGraf ? (userRelGraf.nome||'').toLowerCase() : '';
+    var vendasParaGrafico = adminRelGraf ? todasVendas : todasVendas.filter(function(v){ return (v.vendedor||'').toLowerCase()===meuNomeRelGraf; });
+    vendasParaGrafico.forEach(function(v) {
       if (!v.data) return;
       var dv = new Date(v.data+'T12:00:00');
       meses.forEach(function(m) {
