@@ -1025,18 +1025,8 @@ function resetarSistema() {
         var ok = 0;
         for (var k of Object.keys(keys)) {
           if (k === 'user' || k === 'rascunho_venda') continue;
-          // So baixar do Firebase se localStorage estiver vazio
-          var localRaw = localStorage.getItem(keys[k]);
-          var localData = localRaw ? JSON.parse(localRaw) : null;
-          var localVazio = !localData || (Array.isArray(localData) && localData.length === 0);
-          if (localVazio) {
-            var data = await window._fb.loadCollection(k);
-            if (data !== null) { localStorage.setItem(keys[k], JSON.stringify(data)); ok++; }
-          } else {
-            // Dados locais existem - enviar para Firebase (garantir backup)
-            await window._fb.saveCollection(k, localData);
-            ok++;
-          }
+          var data = await window._fb.loadCollection(k);
+          if (data !== null) { localStorage.setItem(keys[k], JSON.stringify(data)); ok++; }
         }
         return ok;
       }
@@ -3799,26 +3789,20 @@ window.addEventListener('firebaseReady', function() {
   if (user && user.nome) {
     setTimeout(async function() {
       if (window._fb) {
-        // Carregar usuarios do Firebase APENAS se localStorage vazio
-        var usuariosLocal = JSON.parse(localStorage.getItem('otica_usuarios')||'null');
-        if (!usuariosLocal || usuariosLocal.length === 0) {
-          var usuariosCloud = await window._fb.loadCollection('usuarios');
-          if (usuariosCloud && Array.isArray(usuariosCloud) && usuariosCloud.length > 0) {
-            localStorage.setItem('otica_usuarios', JSON.stringify(usuariosCloud));
-            console.log('☁️ Usuarios carregados do Firebase:', usuariosCloud.length);
-          }
-        } else {
-          // Usuarios locais existem - sincronizar para Firebase
-          if (window._fb) window._fb.saveCollection('usuarios', usuariosLocal);
+        // SEMPRE carregar todos os dados do Firebase ao iniciar
+        // Firebase e a fonte de verdade - localStorage e apenas cache
+        var ok = await window._fb.syncFromCloud(KEYS);
+        // Carregar usuarios separadamente (nao esta no KEYS)
+        var usuariosCloud = await window._fb.loadCollection('usuarios');
+        if (usuariosCloud && Array.isArray(usuariosCloud) && usuariosCloud.length > 0) {
+          localStorage.setItem('otica_usuarios', JSON.stringify(usuariosCloud));
         }
-        // Carregar metas do Firebase
+        // Carregar metas
         var metasCloud = await window._fb.loadCollection('metas_vendas');
         if (metasCloud && typeof metasCloud === 'object') {
           localStorage.setItem('otica_metas_vendas', JSON.stringify(metasCloud));
         }
-        // Enviar dados locais para Firebase (garantir backup)
-        var ok = await window._fb.syncToCloud(KEYS);
-        if (ok > 0) { console.log('☁️ Auto-sync enviado:', ok); if(typeof renderDashboard==='function') renderDashboard(); }
+        if (ok > 0) { console.log('☁️ Dados carregados do Firebase:', ok); if(typeof renderDashboard==='function') renderDashboard(); }
       }
     }, 1500);
   }
@@ -3845,7 +3829,7 @@ const save = function(k, v) {
       setTimeout(function() { tentarSalvar(tentativas - 1); }, 2000);
     }
   }
-  tentarSalvar(5); // Tenta ate 5 vezes (10 segundos)
+  tentarSalvar(10); // Tenta ate 10 vezes
 };
 // Sync periódico a cada 30 minutos
 setInterval(async function() {
