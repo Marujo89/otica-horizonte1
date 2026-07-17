@@ -4098,11 +4098,33 @@ function doLogin() {
   }
 
   if (!userObj) {
+    // Tentar carregar do Firebase antes de desistir
+    if (window._firebaseReady && window._fb) {
+      showToast('Verificando credenciais na nuvem...', 'success');
+      window._fb.loadCollection('usuarios').then(function(usuariosCloud) {
+        if (usuariosCloud && Array.isArray(usuariosCloud)) {
+          localStorage.setItem('otica_usuarios', JSON.stringify(usuariosCloud));
+          var userCloud = usuariosCloud.find(function(x){ return x.login===u && x.senha===p && x.status==='Ativo'; });
+          if (userCloud) {
+            finalizarLogin(userCloud, usuariosCloud);
+          } else {
+            showToast('Usuário ou senha incorretos!', 'error');
+          }
+        } else {
+          showToast('Usuário ou senha incorretos!', 'error');
+        }
+      });
+      return;
+    }
     showToast('Usuário ou senha incorretos! Verifique o módulo Usuários.','error');
     return;
   }
 
-  saveUser({nome:userObj.nome, nivel:userObj.nivel, comissao:userObj.comissao||0, login:userObj.login||u});
+  finalizarLogin(userObj, usuarios);
+}
+
+function finalizarLogin(userObj, usuarios) {
+  saveUser({nome:userObj.nome, nivel:userObj.nivel, comissao:userObj.comissao||0, login:userObj.login});
 
   // Atualizar config de comissão com todos os usuários
   var cfg = {};
@@ -6938,23 +6960,17 @@ function delAgendamento(id) {
 // ── MÓDULO DE USUÁRIOS ────────────────────────────────────────────────────
 function getUsuarios() {
   var salvos = JSON.parse(localStorage.getItem('otica_usuarios')||'null');
-  // Garantir que usuários padrão sempre existem (SEM salvar automaticamente)
+  // Garantir apenas que admin existe (nao adicionar vendedor padrao automaticamente)
   if (salvos) {
     var temAdmin = salvos.find(function(u){ return u.login==='admin'; });
-    var temVendedor = salvos.find(function(u){ return u.login==='vendedor'; });
     if (!temAdmin) salvos.unshift({id:1,nome:'Administrador',login:'admin',senha:'admin123',nivel:'Admin',comissao:0,status:'Ativo'});
-    if (!temVendedor) salvos.push({id:2,nome:'Vendedor Padrão',login:'vendedor',senha:'venda123',nivel:'Vendedor',comissao:5,status:'Ativo'});
     // NAO salvar aqui - evita sobrescrever dados mais recentes
   }
   if (!salvos) {
     // Inicializar com usuários padrão + 4 vendedores fictícios
+    // Apenas admin como usuario inicial - outros usuarios sao cadastrados pelo admin
     salvos = [
-      {id:1, nome:'Administrador', login:'admin', senha:'admin123', nivel:'Admin', comissao:0, status:'Ativo'},
-      {id:2, nome:'Vendedor Padrão', login:'vendedor', senha:'venda123', nivel:'Vendedor', comissao:5, status:'Ativo'},
-      {id:3, nome:'Carlos Mendes', login:'carlos', senha:'carlos123', nivel:'Vendedor', comissao:5, status:'Ativo'},
-      {id:4, nome:'Fernanda Lima', login:'fernanda', senha:'fernanda123', nivel:'Vendedor', comissao:6, status:'Ativo'},
-      {id:5, nome:'Roberto Silva', login:'roberto', senha:'roberto123', nivel:'Vendedor', comissao:5, status:'Ativo'},
-      {id:6, nome:'Patrícia Costa', login:'patricia', senha:'patricia123', nivel:'Vendedor', comissao:5.5, status:'Ativo'},
+      {id:1, nome:'Administrador', login:'admin', senha:'admin123', nivel:'Admin', comissao:0, status:'Ativo'}
     ];
     localStorage.setItem('otica_usuarios', JSON.stringify(salvos));
   }
