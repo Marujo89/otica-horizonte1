@@ -4064,7 +4064,8 @@ function doLogout() {
 // ── Navigation ───────────────────────────────────────────────────
 function showSection(id) {
   try {
-  if (window.innerWidth <= 768) { try { closeSidebar(); } catch(e) {} }
+  // Fechar sidebar automaticamente em telas pequenas/médias
+  if (window.innerWidth <= 1024) { try { closeSidebarAuto(); } catch(e) {} }
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   var secEl = document.getElementById('sec-'+id);
@@ -4292,6 +4293,12 @@ function salvarMeta(vendedor, valor) {
     delete metas[vendedor];
   }
   localStorage.setItem('otica_metas_vendas', JSON.stringify(metas));
+  // Sincronizar metas com Firebase para que vendedores vejam
+  if (window._firebaseReady && window._fb) {
+    window._fb.saveCollection('metas_vendas', metas).then(function(ok){
+      if (ok) console.log('Metas sincronizadas!');
+    });
+  }
   showToast('✅ Meta de '+vendedor+' salva: '+fmtMoney(v),'success');
   renderMetaVendas();
 }
@@ -4703,7 +4710,7 @@ function renderClientes() {
       <td>${statusBadge(c.status)}</td>
       <td><div class="flex gap-2">
         ${isAdmin()?`<button class="btn btn-sm btn-info" onclick="verHistorico(${c.id})" style="background:#0ea5e9;color:white" data-tip="Ver histórico do cliente">🔍</button>`:''}
-        <button class="btn btn-sm btn-outline" onclick="editCliente(${c.id})" data-tip="Editar cliente">✏️</button>
+        ${isAdmin()?`<button class="btn btn-sm btn-outline" onclick="editCliente(${c.id})" data-tip="Editar cliente">✏️</button>`:''}
         ${isAdmin()?`<button class="btn btn-sm btn-danger" onclick="delCliente(${c.id})" data-tip="Excluir cliente">🗑️</button>`:''}
       </div></td>
     </tr>`).join('') : '<tr><td colspan="9" class="text-center" style="padding:30px;color:var(--text-muted)">Nenhum cliente encontrado</td></tr>';
@@ -6657,6 +6664,13 @@ function saveUsuarios(arr) {
   arr.forEach(function(u) { cfg[u.login] = u.comissao||0; });
   window._comissaoVendedor = cfg;
   localStorage.setItem('otica_config_comissao', JSON.stringify(cfg));
+  // Salvar usuários no Firebase para persistência
+  if (window._firebaseReady && window._fb) {
+    window._fb.saveCollection('usuarios', arr).then(function(ok){
+      if (ok) console.log('Usuários salvos no Firebase!');
+    });
+    window._fb.saveCollection('config_comissao', cfg);
+  }
 }
 
 function renderUsuarios() {
