@@ -4092,14 +4092,37 @@ function doLogin() {
   var usuarios = getUsuarios();
   var userObj = usuarios.find(function(x){ return x.login===u && x.senha===p && x.status==='Ativo'; });
 
-  // Fallback de segurança para admin APENAS se nao houver outro Admin cadastrado
+  // Fallback admin/admin123 - verificar no Firebase se ha outro Admin
   if (!userObj && u === 'admin' && p === 'admin123') {
-    var temOutroAdmin = usuarios.find(function(x){ return x.nivel==='Admin' && x.login!=='admin' && x.status==='Ativo'; });
-    if (!temOutroAdmin) {
-      // Sem outro admin cadastrado - permitir acesso de emergencia
-      userObj = {nome:'Administrador', nivel:'Admin', comissao:0, login:'admin', senha:'admin123', status:'Ativo'};
+    // Verificar localmente primeiro
+    var temOutroAdminLocal = usuarios.find(function(x){ return x.nivel==='Admin' && x.login!=='admin' && x.status==='Ativo'; });
+    if (temOutroAdminLocal) {
+      // Ja tem admin real - bloquear admin/admin123
+      showToast('Acesso negado. Use seu login personalizado.', 'error');
+      return;
     }
-    // Se ja tem outro admin (Maycon, Silvana, etc), nao permitir admin/admin123
+    // Verificar no Firebase se ha outro admin (caso localStorage esteja vazio)
+    if (window._firebaseReady && window._fb) {
+      showToast('Verificando segurança...', 'success');
+      window._fb.loadCollection('usuarios').then(function(usuariosCloud) {
+        var temAdminCloud = usuariosCloud && usuariosCloud.find(function(x){ return x.nivel==='Admin' && x.login!=='admin' && x.status==='Ativo'; });
+        if (temAdminCloud) {
+          // Firebase tem admin real - bloquear
+          showToast('Acesso negado. Use seu login personalizado.', 'error');
+        } else {
+          // Sem admin real - permitir acesso de emergencia
+          var emergUser = {nome:'Administrador', nivel:'Admin', comissao:0, login:'admin', senha:'admin123', status:'Ativo'};
+          finalizarLogin(emergUser, [emergUser]);
+        }
+      }).catch(function() {
+        // Firebase indisponivel - permitir acesso de emergencia
+        var emergUser = {nome:'Administrador', nivel:'Admin', comissao:0, login:'admin', senha:'admin123', status:'Ativo'};
+        finalizarLogin(emergUser, [emergUser]);
+      });
+      return;
+    }
+    // Firebase nao disponivel e sem admin local - permitir emergencia
+    userObj = {nome:'Administrador', nivel:'Admin', comissao:0, login:'admin', senha:'admin123', status:'Ativo'};
   }
 
   if (!userObj) {
