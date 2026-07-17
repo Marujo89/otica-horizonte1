@@ -214,7 +214,7 @@ window.renderCatalogo = function() {
       ? `<img class="card-foto" src="${p.foto}" alt="${p.desc||''}" onclick="abrirZoom('${fotoSafe}','${descSafe}')" loading="lazy"/>`
       : `<div class="card-no-foto">🕶️</div>`;
     const info = [p.marca,p.modelo,p.cor].filter(Boolean).join(' · ');
-    const msg = encodeURIComponent('Olá! Vi no catálogo da Ótica Horizonte:\n🕶️ *'+(p.desc||p.cod)+'*'+(p.marca?'\nMarca: '+p.marca:'')+(p.modelo?'\nModelo: '+p.modelo:'')+(p.cor?'\nCor: '+p.cor:'')+'\n\nPoderia me passar mais informações e o valor?');
+    const msg = encodeURIComponent('Olá! Vi no catálogo da Ótica Horizonte:\n🕶️ *'+(p.desc||p.cod)+'*'+'\nCódigo: '+(p.cod||'')+(p.marca?'\nMarca: '+p.marca:'')+(p.modelo?'\nModelo: '+p.modelo:'')+(p.cor?'\nCor: '+p.cor:'')+'\n\nPoderia me passar mais informações e o valor?');
     const btnHtml = _wpp
       ? `<button class="btn-wpp" onclick="window.open('https://wa.me/${_wpp}?text=${msg}','_blank')">📱 Quero este modelo</button>`
       : `<button class="btn-orcamento" onclick="window.open('https://wa.me/5592992890085?text=${msg}','_blank')">📞 Pedir orçamento</button>`;
