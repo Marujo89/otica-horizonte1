@@ -4092,9 +4092,14 @@ function doLogin() {
   var usuarios = getUsuarios();
   var userObj = usuarios.find(function(x){ return x.login===u && x.senha===p && x.status==='Ativo'; });
 
-  // Fallback de segurança para admin (caso localStorage seja limpo)
+  // Fallback de segurança para admin APENAS se nao houver outro Admin cadastrado
   if (!userObj && u === 'admin' && p === 'admin123') {
-    userObj = {nome:'Administrador', nivel:'Admin', comissao:0, login:'admin', senha:'admin123', status:'Ativo'};
+    var temOutroAdmin = usuarios.find(function(x){ return x.nivel==='Admin' && x.login!=='admin' && x.status==='Ativo'; });
+    if (!temOutroAdmin) {
+      // Sem outro admin cadastrado - permitir acesso de emergencia
+      userObj = {nome:'Administrador', nivel:'Admin', comissao:0, login:'admin', senha:'admin123', status:'Ativo'};
+    }
+    // Se ja tem outro admin (Maycon, Silvana, etc), nao permitir admin/admin123
   }
 
   if (!userObj) {
