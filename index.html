@@ -4712,10 +4712,14 @@ window.addEventListener('firebaseReady', function() {
         // SEMPRE carregar todos os dados do Firebase ao iniciar
         // Firebase e a fonte de verdade - localStorage e apenas cache
         var ok = await window._fb.syncFromCloud(KEYS);
-        // Carregar usuarios separadamente (nao esta no KEYS)
+        // Carregar usuarios do Firebase - so sobrescrever se Firebase tem mais usuarios
         var usuariosCloud = await window._fb.loadCollection('usuarios');
         if (usuariosCloud && Array.isArray(usuariosCloud) && usuariosCloud.length > 0) {
-          localStorage.setItem('otica_usuarios', JSON.stringify(usuariosCloud));
+          var usuariosLocal = JSON.parse(localStorage.getItem('otica_usuarios')||'[]');
+          // So sobrescrever se Firebase tem mais usuarios que o local
+          if (usuariosCloud.length >= usuariosLocal.length) {
+            localStorage.setItem('otica_usuarios', JSON.stringify(usuariosCloud));
+          }
         }
         // Carregar metas
         var metasCloud = await window._fb.loadCollection('metas_vendas');
