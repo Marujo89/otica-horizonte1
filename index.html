@@ -3797,7 +3797,7 @@ const load = k => JSON.parse(localStorage.getItem(KEYS[k]) || '[]');
 const _saveBase = (k,v) => localStorage.setItem(KEYS[k], JSON.stringify(v));
 const save = function(k, v) {
   _saveBase(k, v);
-  var criticos = ['vendas','os','produtos','clientes','receitas','agendamentos','despesas','composicoes','usuarios'];
+  var criticos = ['vendas','os','produtos','clientes','receitas','agendamentos','despesas','composicoes'];
   if (criticos.indexOf(k) === -1) return;
   // Tentar salvar no Firebase imediatamente ou aguardar conexao
   function tentarSalvar(tentativas) {
@@ -4344,8 +4344,16 @@ function renderMetaVendas() {
     porVendedor[vend] += calcTotal(v);
   });
 
+  // Incluir TODOS os vendedores cadastrados (mesmo sem vendas no mes)
+  var todosUsuarios = getUsuarios ? getUsuarios() : [];
+  todosUsuarios.forEach(function(u) {
+    if (u.nivel !== 'Vendedor') return; // Apenas vendedores
+    if (u.status === 'Inativo') return; // Apenas ativos
+    if (!porVendedor[u.nome]) porVendedor[u.nome] = 0; // Adicionar com 0 se nao tem vendas
+  });
+
   if (Object.keys(porVendedor).length === 0) {
-    body.innerHTML = '<tr><td colspan="4" style="padding:16px;text-align:center;color:var(--text-muted)">Nenhuma venda de vendedores este mês</td></tr>';
+    body.innerHTML = '<tr><td colspan="4" style="padding:16px;text-align:center;color:var(--text-muted)">Nenhum vendedor cadastrado</td></tr>';
     return;
   }
 
@@ -7046,6 +7054,13 @@ function getUsuarios() {
 }
 
 function saveUsuarios(arr) {
+  // Deduplicar por login antes de salvar
+  var vistos = {};
+  arr = arr.filter(function(u) {
+    if (vistos[u.login]) return false;
+    vistos[u.login] = true;
+    return true;
+  });
   // Salvar no localStorage imediatamente
   localStorage.setItem('otica_usuarios', JSON.stringify(arr));
   // Atualizar config de comissão
