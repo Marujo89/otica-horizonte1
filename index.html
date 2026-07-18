@@ -7946,14 +7946,14 @@ function getUsuarios() {
   // Garantir apenas que admin existe (nao adicionar vendedor padrao automaticamente)
   if (salvos) {
     var temAdmin = salvos.find(function(u){ return u.login==='admin'; });
-    if (!temAdmin) salvos.unshift({id:1,nome:'Administrador',login:'admin',senha:'admin123',nivel:'Admin',comissao:0,status:'Ativo'});
+    if (!temAdmin) salvos.unshift({id:0,nome:'Administrador',login:'admin',senha:'admin123',nivel:'Admin',comissao:0,status:'Ativo'});
     // NAO salvar aqui - evita sobrescrever dados mais recentes
   }
   if (!salvos) {
     // Inicializar com usuários padrão + 4 vendedores fictícios
     // Apenas admin como usuario inicial - outros usuarios sao cadastrados pelo admin
     salvos = [
-      {id:1, nome:'Administrador', login:'admin', senha:'admin123', nivel:'Admin', comissao:0, status:'Ativo'}
+      {id:0, nome:'Administrador', login:'admin', senha:'admin123', nivel:'Admin', comissao:0, status:'Ativo'}
     ];
     localStorage.setItem('otica_usuarios', JSON.stringify(salvos));
   }
@@ -8075,7 +8075,7 @@ function saveUsuario() {
     var i = arr.findIndex(function(u){ return u.id===parseInt(idx); });
     if (i>=0) arr[i] = {id:parseInt(idx), nome, login, senha, nivel, comissao, status, whatsapp};
   } else {
-    var ids = arr.map(function(u){return u.id||0;});
+    var ids = arr.filter(function(u){return u.id>0;}).map(function(u){return u.id||0;});
     var newId = ids.length > 0 ? Math.max.apply(null, ids) + 1 : 1;
     arr.push({id:newId, nome, login, senha, nivel, comissao, status, whatsapp});
   }
