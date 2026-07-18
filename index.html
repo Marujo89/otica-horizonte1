@@ -1177,7 +1177,7 @@ function instalarApp() {
 <button data-tip="Enviar todos os dados para a nuvem" onclick="syncLocalToCloud()" style="width:100%;padding:7px 4px;background:rgba(251,146,60,.3);border:1px solid rgba(251,146,60,.5);border-radius:8px;color:rgba(255,255,255,.9);font-size:11px;cursor:pointer;font-weight:600">☁️ Enviar Nuvem</button>
 <button data-tip="Baixar dados da nuvem" onclick="syncFirebaseToLocal()" style="width:100%;padding:7px 4px;background:rgba(99,102,241,.3);border:1px solid rgba(99,102,241,.5);border-radius:8px;color:rgba(255,255,255,.9);font-size:11px;cursor:pointer;font-weight:600">⬇️ Baixar Nuvem</button>
 </div>
-<input accept=".json" id="backup-file-input" onchange="processarBackup(this)" style="display:none" type="file"/>
+<input accept=".json" id="backup-file-sidebar" onchange="processarBackup(this)" style="display:none" type="file"/>
 <div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:6px">© 2026 Ótica Horizonte</div>
 <div id="sync-indicator" style="font-size:10px;color:rgba(201,168,76,.7);margin-bottom:6px;display:flex;align-items:center;gap:4px">
 <span id="sync-icon">☁️</span><span id="sync-text">Verificando...</span>
@@ -1281,7 +1281,7 @@ function instalarApp() {
 </div>
 <div class="card" id="card-dash-os">
 <div class="card-header"><h3>🔧 OS em Aberto</h3></div>
-<div class="card-body" style="padding:0;max-height:220px;overflow-y:auto"><table><thead><tr><th>Nº</th><th>Cliente</th><th>Tipo</th><th>Status</th></tr></thead><tbody id="dash-os"></tbody></table></div>
+<div class="card-body" style="padding:0"><table><thead><tr><th>Nº</th><th>Cliente</th><th>Tipo</th><th>Status</th></tr></thead><tbody id="dash-os"></tbody></table></div>
 </div>
 </div>
 </section>
@@ -3699,12 +3699,8 @@ function instalarApp() {
 <!-- ══════════════════════════════════════════════════════════════ -->
 
 
-</div></body>
-</html
-<div id="login-err" style="color:red;font-size:12px;margin-top:6px"></div>
 
-</div>
-</div>
+
 <!-- ══════════════════════════════════════════════════════════════ -->
 <!-- JAVASCRIPT -->
 <!-- ══════════════════════════════════════════════════════════════ -->
@@ -10398,7 +10394,7 @@ function exportarBackup() {
 }
 
 function importarBackup() {
-  var input = document.getElementById('backup-file-input');
+  var input = document.getElementById('backup-file-sidebar') || document.getElementById('backup-file-input');
   if (input) { input.value = ''; input.click(); }
 }
 
