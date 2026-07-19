@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0" name="viewport"/>
-<title>Ótica Horizonte — Sistema de Gestão</title>
+<title>Ótica Horizonte — Sistema de Gestão v158</title>
 <style>
   /* ══════════════════════════════════════════════
      RESET & VARIÁVEIS
@@ -2587,7 +2587,7 @@ function instalarApp() {
 <div id="fin-panel-fluxo">
 <div class="card" style="margin-bottom:16px">
 <div class="card-header"><h3>📊 Fluxo de Caixa — Saldo Diário</h3></div>
-<div class="card-body" style="padding:0"><table><thead><tr><th>Data</th><th>Entradas</th><th>Saídas</th><th>Saldo do Dia</th><th>Saldo Acumulado</th></tr></thead><tbody id="tb-fluxo-caixa"></tbody></table></div>
+<div class="card-body" style="padding:0"><table><thead><tr><th>Data</th><th>Entradas</th><th>Saídas</th><th>Saldo do Dia</th><th>Saldo Acumulado</th><th>Detalhes</th></tr></thead><tbody id="tb-fluxo-caixa"></tbody></table></div>
 </div>
 </div>
 <!-- Saídas (despesas) -->
@@ -5599,7 +5599,7 @@ function renderDashboard() {
   const clientes = load('clientes').filter(c=>c.status!=='Inativo'), produtos = load('produtos'), vendas = load('vendas'), os = load('os');
   const totalVendas = vendas.reduce((s,v) => s + calcTotal(v), 0);
   const totalOS = os.filter(o=>o.tipoOS!=='montagem').reduce((s,o) => s + (o.valor||0), 0);
-  const baixoEstoque = produtos.filter(p => p.qtd <= p.min).length;
+  const baixoEstoque = produtos.filter(p => p.cat !== 'Serviço' && p.qtd <= p.min).length;
   const osAberto = os.filter(o => o.status !== 'Entregue' && o.status !== 'Cancelada').length;
   // Usar data local (nao UTC) para evitar erro de mes
   var hoje = new Date();
@@ -6415,7 +6415,7 @@ function renderProdutos() {
   );
   document.getElementById('tb-produtos').innerHTML = data.length ? data.map((p,i) => {
     const margem = p.venda>0 ? (p.venda-p.custo)/p.venda*100 : 0;
-    const status = p.qtd <= p.min ? 'Repor' : 'OK';
+    const status = (p.cat === 'Serviço') ? 'Serviço' : (p.qtd <= p.min ? 'Repor' : 'OK');
     return `<tr>
       <td><strong>${p.cod}</strong></td><td>${p.foto?`<img src="${p.foto}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;margin-right:6px;vertical-align:middle"/>`:''}${p.desc}</td>
       <td><span class="badge badge-info">${p.cat}</span></td>
@@ -6425,7 +6425,7 @@ function renderProdutos() {
       ${isAdmin()?`<td>${fmtMoney(p.custo)}</td>`:''}
       <td>${fmtMoney(p.venda)}</td>
       ${isAdmin()?`<td>${fmtPct(margem)}</td>`:''}
-      <td>${statusBadge(status)}</td>
+      <td>${status==='Serviço'?'<span class="badge badge-info">🔧 Serviço</span>':statusBadge(status)}</td>
       <td><div class="flex gap-2">
         <button class="btn btn-sm" onclick="visualizarProduto('${p.cod}')" data-tip="Visualizar produto" style="background:linear-gradient(135deg,#0ea5e9,#0284c7);color:white;border:none;border-radius:6px;padding:4px 8px;cursor:pointer">👁️ Ver</button>
         ${isAdmin()?`<button class="btn btn-sm btn-outline" onclick="editProduto('${p.cod}')" data-tip="Editar produto">✏️</button>`:''}
@@ -8321,7 +8321,8 @@ function renderSaldoDia() {
   var receitaOS = osHoje.reduce(function(s,o){ return s+(o.valor||0); },0);
   var entradasHoje = load('entradas').filter(function(e){ return (e.data||'').startsWith(hoje); });
   var receitaEntradas = entradasHoje.reduce(function(s,e){ return s+(e.valor||0); },0);
-  var totalEntradas = receitaVendas + receitaOS + receitaEntradas;
+  var receitaOperacional = receitaVendas + receitaOS;
+  var totalEntradas = receitaOperacional + receitaEntradas;
   
   // Saidas do dia
   var despesasHoje = load('despesas').filter(function(d){ return (d.data||'').startsWith(hoje); });
@@ -8331,7 +8332,8 @@ function renderSaldoDia() {
   var cor = saldo >= 0 ? '#16a34a' : '#dc2626';
   
   el.innerHTML = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">'
-    + '<div class="stat-card green"><div class="label">Entradas Hoje</div><div class="value">'+fmtMoney(totalEntradas)+'</div><div class="sub">vendas + OS + aportes</div></div>'
+    + '<div class="stat-card green"><div class="label">💰 Receita Operacional</div><div class="value">'+fmtMoney(receitaOperacional)+'</div><div class="sub">vendas + OS</div></div>'
+    + (receitaEntradas>0?'<div class="stat-card" style="border-left:4px solid #0ea5e9"><div class="label">💼 Aportes</div><div class="value" style="color:#0ea5e9">'+fmtMoney(receitaEntradas)+'</div><div class="sub">entradas manuais</div></div>':'')
     + '<div class="stat-card red"><div class="label">Saídas Hoje</div><div class="value">'+fmtMoney(totalSaidas)+'</div><div class="sub">despesas do dia</div></div>'
     + '<div class="stat-card" style="border-left:4px solid '+cor+'"><div class="label">Saldo do Dia</div><div class="value" style="color:'+cor+'">'+fmtMoney(saldo)+'</div><div class="sub">'+(saldo>=0?'positivo':'negativo')+'</div></div>'
     + '<div class="stat-card"><div class="label">Vendas Hoje</div><div class="value">'+vendasHoje.length+'</div><div class="sub">transações</div></div>'
@@ -8418,6 +8420,7 @@ function renderFluxoCaixa() {
       + '<td style="color:#dc2626;font-weight:700">'+fmtMoney(sai)+'</td>'
       + '<td style="color:'+corDia+';font-weight:800">'+fmtMoney(saldoDia)+'</td>'
       + '<td style="color:'+corAc+';font-weight:700">'+fmtMoney(saldoAc)+'</td>'
+      + '<td><button class="btn btn-sm btn-info" onclick="verDetalhesDia(\''+d+'\')" style="background:#0ea5e9;color:white;border:none;border-radius:6px;padding:3px 8px;cursor:pointer;font-size:11px">🔍 Ver</button></td>'
       + '</tr>';
   }).join('');
 }
@@ -8476,6 +8479,75 @@ function delEntrada(id) {
   renderEntradas();
   renderFluxoCaixa();
   showToast('Entrada excluída!','warning');
+}
+
+
+function verDetalhesDia(data) {
+  var clMap = Object.fromEntries(load('clientes').map(c=>[c.id,c.nome]));
+  var prodMap = Object.fromEntries(load('produtos').map(p=>[p.cod,p.desc]));
+  
+  var vendasDia = load('vendas').filter(function(v){ return (v.data||'').startsWith(data); });
+  var osDia = load('os').filter(function(o){ return (o.abertura||'').startsWith(data) && o.tipoOS!=='montagem'; });
+  var entradasDia = load('entradas').filter(function(e){ return (e.data||'').startsWith(data); });
+  var despesasDia = load('despesas').filter(function(d){ return (d.data||'').startsWith(data); });
+  
+  var totalVendas = vendasDia.reduce(function(s,v){ return s+calcTotal(v); },0);
+  var totalOS = osDia.reduce(function(s,o){ return s+(o.valor||0); },0);
+  var totalEntradas = entradasDia.reduce(function(s,e){ return s+(e.valor||0); },0);
+  var totalDespesas = despesasDia.reduce(function(s,d){ return s+(d.valor||0); },0);
+  var saldo = totalVendas + totalOS + totalEntradas - totalDespesas;
+  var corSaldo = saldo >= 0 ? '#16a34a' : '#dc2626';
+  
+  var html = '<div style="padding:16px">'
+    + '<h3 style="margin-bottom:12px;color:#0d2b4e">📊 Detalhes de ' + fmtDate(data) + '</h3>'
+    + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px">'
+    + '<div class="stat-card green"><div class="label">Vendas</div><div class="value" style="font-size:16px">' + fmtMoney(totalVendas) + '</div></div>'
+    + '<div class="stat-card"><div class="label">OS</div><div class="value" style="font-size:16px">' + fmtMoney(totalOS) + '</div></div>'
+    + '<div class="stat-card red"><div class="label">Despesas</div><div class="value" style="font-size:16px">' + fmtMoney(totalDespesas) + '</div></div>'
+    + '<div class="stat-card" style="border-left:4px solid ' + corSaldo + '"><div class="label">Saldo</div><div class="value" style="font-size:16px;color:' + corSaldo + '">' + fmtMoney(saldo) + '</div></div>'
+    + '</div>';
+  
+  if (vendasDia.length > 0) {
+    html += '<div style="margin-bottom:12px"><strong style="color:#0d2b4e">🛒 Vendas (' + vendasDia.length + ')</strong>'
+      + '<table style="width:100%;font-size:12px;margin-top:6px;border-collapse:collapse">'
+      + '<thead><tr><th style="padding:6px;background:#f8fafc;border-bottom:1px solid #e2e8f0">Cliente</th><th style="padding:6px;background:#f8fafc;border-bottom:1px solid #e2e8f0">Produto</th><th style="padding:6px;background:#f8fafc;border-bottom:1px solid #e2e8f0">Total</th><th style="padding:6px;background:#f8fafc;border-bottom:1px solid #e2e8f0">Pag.</th></tr></thead><tbody>'
+      + vendasDia.map(function(v) {
+          var desc = v.produto==='OCULOS-COMPLETO' ? '🕶️ Óculos Completo' : (prodMap[v.produto]||v.produto||'-');
+          return '<tr><td style="padding:6px;border-bottom:1px solid #f1f5f9">' + (clMap[v.clienteId]||'-') + '</td><td style="padding:6px;border-bottom:1px solid #f1f5f9">' + desc + '</td><td style="padding:6px;border-bottom:1px solid #f1f5f9;color:#16a34a;font-weight:700">' + fmtMoney(calcTotal(v)) + '</td><td style="padding:6px;border-bottom:1px solid #f1f5f9">' + v.pag + '</td></tr>';
+        }).join('')
+      + '</tbody></table></div>';
+  }
+  
+  if (despesasDia.length > 0) {
+    html += '<div style="margin-bottom:12px"><strong style="color:#dc2626">💸 Despesas (' + despesasDia.length + ')</strong>'
+      + '<table style="width:100%;font-size:12px;margin-top:6px;border-collapse:collapse">'
+      + '<thead><tr><th style="padding:6px;background:#f8fafc;border-bottom:1px solid #e2e8f0">Categoria</th><th style="padding:6px;background:#f8fafc;border-bottom:1px solid #e2e8f0">Descrição</th><th style="padding:6px;background:#f8fafc;border-bottom:1px solid #e2e8f0">Valor</th></tr></thead><tbody>'
+      + despesasDia.map(function(d) {
+          return '<tr><td style="padding:6px;border-bottom:1px solid #f1f5f9">' + d.cat + '</td><td style="padding:6px;border-bottom:1px solid #f1f5f9">' + d.desc + '</td><td style="padding:6px;border-bottom:1px solid #f1f5f9;color:#dc2626;font-weight:700">' + fmtMoney(d.valor) + '</td></tr>';
+        }).join('')
+      + '</tbody></table></div>';
+  }
+  
+  if (entradasDia.length > 0) {
+    html += '<div><strong style="color:#0ea5e9">💵 Entradas Manuais (' + entradasDia.length + ')</strong>'
+      + '<table style="width:100%;font-size:12px;margin-top:6px;border-collapse:collapse">'
+      + '<thead><tr><th style="padding:6px;background:#f8fafc;border-bottom:1px solid #e2e8f0">Tipo</th><th style="padding:6px;background:#f8fafc;border-bottom:1px solid #e2e8f0">Descrição</th><th style="padding:6px;background:#f8fafc;border-bottom:1px solid #e2e8f0">Valor</th></tr></thead><tbody>'
+      + entradasDia.map(function(e) {
+          return '<tr><td style="padding:6px;border-bottom:1px solid #f1f5f9">' + e.tipo + '</td><td style="padding:6px;border-bottom:1px solid #f1f5f9">' + e.desc + '</td><td style="padding:6px;border-bottom:1px solid #f1f5f9;color:#0ea5e9;font-weight:700">' + fmtMoney(e.valor) + '</td></tr>';
+        }).join('')
+      + '</tbody></table></div>';
+  }
+  
+  html += '</div>';
+  
+  // Usar modal generico
+  var modal = document.getElementById('modal-visualizar-produto');
+  if (modal) {
+    document.getElementById('view-prod-content').innerHTML = html;
+    openModal('modal-visualizar-produto');
+  } else {
+    alert('Detalhes de ' + fmtDate(data) + '\nSaldo: ' + fmtMoney(saldo));
+  }
 }
 
 function renderEntradas() {
@@ -10624,12 +10696,16 @@ function filtrarEstoqueBusca(tipo) {
   lista.innerHTML = filtrados.slice(0,10).map(function(p) {
     var estoqueInfo = p.qtd <= p.min ? `<span style="color:#dc2626;font-size:9px">⚠️ ${p.qtd} un.</span>` : `<span style="color:#16a34a;font-size:9px">${p.qtd} un.</span>`;
     var custoInfo = isAdmin ? `<span style="color:#5a6a8a;font-size:9px"> | Custo: R$${p.custo}</span>` : '';
-    return `<div onclick="selecionarEstoqueBusca('${tipo}','${p.cod}')" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid #eef1f8;font-size:12px" onmouseover="this.style.background='#f0f4ff'" onmouseout="this.style.background='white'">
-      <div style="font-weight:600;color:#0d2b4e">${p.desc}</div>
+    var isServico = p.cat === 'Serviço';
+    var bgItem = isServico ? '#f0fdf4' : 'white';
+    var iconeItem = isServico ? '🔧 ' : '';
+    var estoqueDisplay = isServico ? '<span style="color:#0ea5e9;font-size:9px">Serviço</span>' : estoqueInfo;
+    return `<div onclick="selecionarEstoqueBusca('${tipo}','${p.cod}')" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid #eef1f8;font-size:12px;background:${bgItem}" onmouseover="this.style.background='#f0f4ff'" onmouseout="this.style.background='${bgItem}'">
+      <div style="font-weight:600;color:#0d2b4e">${iconeItem}${p.desc}</div>
       <div style="display:flex;gap:8px;align-items:center;margin-top:2px">
         <span style="color:#5a6a8a;font-size:10px">${p.cod}</span>
         <span style="color:#16a34a;font-size:11px;font-weight:700">R$ ${p.venda}</span>
-        ${estoqueInfo}${custoInfo}
+        ${estoqueDisplay}${custoInfo}
       </div>
     </div>`;
   }).join('') || '<div style="padding:12px;text-align:center;color:#5a6a8a;font-size:12px">Nenhum produto encontrado</div>';
