@@ -1928,29 +1928,24 @@ function resetarSistema() {
     window._fb = {
       async saveCollection(colName, data) {
         try {
-          var jsonStr = JSON.stringify(data);
-          // Verificar tamanho - Firebase tem limite de ~1MB por documento
-          if (jsonStr.length > 900000) {
-            // Dados muito grandes - remover fotos base64 antes de salvar
-            if (colName === 'produtos' && Array.isArray(data)) {
-              var semFotos = data.map(function(p) {
-                var c = Object.assign({}, p);
-                // Manter apenas URLs (comecam com http), remover base64
-                if (c.foto && c.foto.startsWith('data:')) c.foto = '';
-                return c;
-              });
-              jsonStr = JSON.stringify(semFotos);
-            }
+          // Para produtos: NUNCA remover fotos Cloudinary (URLs https://)
+          if (colName === 'produtos' && Array.isArray(data)) {
+            data = data.map(function(p) {
+              var c = Object.assign({}, p);
+              // Remover apenas base64 (muito grande), manter URLs Cloudinary
+              if (c.foto && c.foto.startsWith('data:')) c.foto = '';
+              return c;
+            });
           }
+          var jsonStr = JSON.stringify(data);
           await setDoc(doc(db, '_collections', colName), { data: jsonStr, ts: Date.now() });
           return true;
         } catch(e) {
           console.warn('Firebase save error:', colName, e.message);
-          if (typeof showToast === 'function') showToast('⚠️ Erro ao salvar ' + colName + ' na nuvem', 'warning');
           return false;
         }
       },
-      async loadCollection(colName) {
+            async loadCollection(colName) {
         try {
           const snap = await getDoc(doc(db, '_collections', colName));
           if (snap.exists()) return JSON.parse(snap.data().data || '[]');
@@ -1962,67 +1957,29 @@ function resetarSistema() {
         for (var k of Object.keys(keys)) {
           if (k === 'user' || k === 'rascunho_venda') continue;
           var data = JSON.parse(localStorage.getItem(keys[k]) || '[]');
-          // Para produtos: preservar fotos Cloudinary do Firebase
-          if (k === 'produtos' && Array.isArray(data)) {
-            try {
-              var fbData = await window._fb.loadCollection('produtos');
-              if (fbData && Array.isArray(fbData)) {
-                // Mesclar: usar dados locais mas preservar fotos do Firebase
-                data = data.map(function(p) {
-                  var fbProd = fbData.find(function(fp){ return fp.cod===p.cod; });
-                  // Se local nao tem foto mas Firebase tem URL Cloudinary, preservar
-                  if (fbProd && fbProd.foto && fbProd.foto.startsWith('https://') && (!p.foto || p.foto.startsWith('data:'))) {
-                    p = Object.assign({}, p, {foto: fbProd.foto});
-                  }
-                  // Preservar catalogo=true do Firebase se local nao tem
-                  if (fbProd && fbProd.catalogo === true && !p.catalogo) {
-                    p = Object.assign({}, p, {catalogo: true});
-                  }
-                  return p;
-                });
-                // Atualizar localStorage com dados mesclados
-                localStorage.setItem(keys[k], JSON.stringify(data));
-              }
-            } catch(e) { console.warn('Merge produtos error:', e); }
-          }
           var saved = await window._fb.saveCollection(k, data);
           if (saved) ok++;
         }
         return ok;
       },
-      async syncFromCloud(keys) {
+            async syncFromCloud(keys) {
         var ok = 0;
         for (var k of Object.keys(keys)) {
           if (k === 'user' || k === 'rascunho_venda') continue;
           try {
             var data = await window._fb.loadCollection(k);
             if (data !== null && data !== undefined) {
-              if (Array.isArray(data) || typeof data === 'object') {
-                // Para produtos: mesclar fotos locais com dados do Firebase
-                if (k === 'produtos' && Array.isArray(data)) {
-                  var localData = JSON.parse(localStorage.getItem(keys[k])||'[]');
-                  if (Array.isArray(localData) && localData.length > 0) {
-                    data = data.map(function(p) {
-                      var localProd = localData.find(function(lp){ return lp.cod===p.cod; });
-                      // Se Firebase nao tem foto mas local tem URL Cloudinary, usar local
-                      if (localProd && localProd.foto && localProd.foto.startsWith('https://') && (!p.foto || !p.foto.startsWith('https://'))) {
-                        p = Object.assign({}, p, {foto: localProd.foto, catalogo: localProd.catalogo||p.catalogo});
-                      }
-                      return p;
-                    });
-                  }
-                }
-                localStorage.setItem(keys[k], JSON.stringify(data));
-                ok++;
-              }
+              localStorage.setItem(keys[k], JSON.stringify(data));
+              ok++;
             }
           } catch(e) {
-            console.warn('syncFromCloud error for', k, e.message);
+            console.warn('syncFromCloud error:', k, e.message);
           }
         }
         return ok;
       }
     };
+
 
     window._firebaseReady = true;
     console.log('✅ Firebase conectado!');
@@ -4880,40 +4837,29 @@ const load = k => JSON.parse(localStorage.getItem(KEYS[k]) || '[]');
 // Save com sync IMEDIATO para dados críticos
 const _saveBase = (k,v) => localStorage.setItem(KEYS[k], JSON.stringify(v));
 const save = function(k, v) {
+  // 1. Salvar no localStorage imediatamente
   _saveBase(k, v);
+  // 2. Salvar no Firebase imediatamente (sem delay)
   var criticos = ['vendas','os','produtos','clientes','receitas','agendamentos','despesas','composicoes','entradas'];
   if (criticos.indexOf(k) === -1) return;
-  // Tentar salvar no Firebase imediatamente ou aguardar conexao
-  function tentarSalvar(tentativas) {
-    if (window._firebaseReady && window._fb) {
-      window._fb.saveCollection(k, v).then(function(ok) {
-        if (ok) {
-          localStorage.setItem('otica_ultimo_sync', Date.now().toString());
-          if (typeof atualizarSyncIndicator === 'function') atualizarSyncIndicator();
-          if (typeof mostrarConfirmacaoSync === 'function') mostrarConfirmacaoSync();
-        } else if (tentativas <= 1) {
-          // Ultima tentativa falhou - avisar usuario
-          var syncEl = document.getElementById('sync-text');
-          if (syncEl) { syncEl.textContent = '⚠️ Erro ao salvar na nuvem'; syncEl.style.color = '#dc2626'; }
-        }
-      });
-    } else if (tentativas > 0) {
-      // Firebase ainda nao conectou, tentar em 2 segundos
-      setTimeout(function() { tentarSalvar(tentativas - 1); }, 2000);
-    }
+  if (window._firebaseReady && window._fb) {
+    window._fb.saveCollection(k, v).then(function(ok) {
+      if (ok) {
+        localStorage.setItem('otica_ultimo_sync', Date.now().toString());
+        if (typeof atualizarSyncIndicator === 'function') atualizarSyncIndicator();
+      }
+    });
+  } else {
+    // Firebase nao conectou ainda - tentar em 3 segundos
+    setTimeout(function() {
+      if (window._firebaseReady && window._fb) {
+        window._fb.saveCollection(k, v);
+      }
+    }, 3000);
   }
-  tentarSalvar(10); // Tenta ate 10 vezes
 };
-// Sync periódico a cada 30 minutos
-setInterval(async function() {
-  if (window._firebaseReady && window._fb && loadUser()) {
-    var ok = await window._fb.syncToCloud(KEYS);
-    if (ok > 0) {
-      localStorage.setItem('otica_ultimo_sync', Date.now().toString());
-      if (typeof atualizarSyncIndicator === 'function') atualizarSyncIndicator();
-    }
-  }
-}, 30 * 60 * 1000);
+
+// Auto-sync periódico removido — save() já salva imediatamente no Firebase
 const loadUser = () => JSON.parse(localStorage.getItem(KEYS.user) || 'null');
 const saveUser = v => localStorage.setItem(KEYS.user, JSON.stringify(v));
 
@@ -5207,6 +5153,7 @@ function finalizarLogin(userObj, usuarios) {
   // Aguardar Firebase e sincronizar antes de mostrar conteudo
   function aguardarFirebaseESync(tentativas) {
     if (window._firebaseReady && window._fb) {
+      var loadingEl = document.getElementById('app-loading-overlay');
       window._fb.syncFromCloud(KEYS).then(function(ok) {
         // Carregar usuarios
         window._fb.loadCollection('usuarios').then(function(usuariosCloud) {
@@ -5221,7 +5168,6 @@ function finalizarLogin(userObj, usuarios) {
             if (entradasCloud && Array.isArray(entradasCloud)) {
               localStorage.setItem('otica_entradas', JSON.stringify(entradasCloud));
             }
-            // Esconder loading e mostrar app
             if (loadingEl) loadingEl.style.display = 'none';
             showSection('dashboard');
             aplicarControleAcesso();
@@ -5231,7 +5177,7 @@ function finalizarLogin(userObj, usuarios) {
     } else if (tentativas > 0) {
       setTimeout(function() { aguardarFirebaseESync(tentativas - 1); }, 500);
     } else {
-      // Firebase nao conectou - mostrar app com dados locais
+      var loadingEl = document.getElementById('app-loading-overlay');
       if (loadingEl) loadingEl.style.display = 'none';
       showSection('dashboard');
       aplicarControleAcesso();
