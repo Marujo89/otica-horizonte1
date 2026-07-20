@@ -6333,6 +6333,10 @@ function onFotoChange() {
   };
   reader.readAsDataURL(file);
 
+  // Bloquear botao salvar durante upload
+  window._fotoUploadando = true;
+  var btnSalvar = document.querySelector('#modal-produto .btn-primary');
+  if (btnSalvar) { btnSalvar.disabled = true; btnSalvar.textContent = '⏳ Enviando foto...'; }
   // Upload para Cloudinary - URL permanente na nuvem
   showToast('⏳ Enviando foto para a nuvem...', 'success');
   var formData = new FormData();
@@ -6349,8 +6353,12 @@ function onFotoChange() {
     if (data.secure_url) {
       hidden.value = data.secure_url;
       preview.src = data.secure_url;
-      showToast('✅ Foto salva na nuvem! (' + Math.round((data.bytes||0)/1024) + 'KB)', 'success');
+      window._fotoUploadando = false;
+      if (btnSalvar) { btnSalvar.disabled = false; btnSalvar.textContent = '💾 Salvar'; }
+      showToast('✅ Foto salva na nuvem! (' + Math.round((data.bytes||0)/1024) + 'KB) — Clique Salvar para confirmar', 'success');
     } else {
+      window._fotoUploadando = false;
+      if (btnSalvar) { btnSalvar.disabled = false; btnSalvar.textContent = '💾 Salvar'; }
       showToast('⚠️ Erro no upload da foto. Tente novamente.', 'warning');
       // Fallback: base64 local
       var r2 = new FileReader();
@@ -6359,6 +6367,8 @@ function onFotoChange() {
     }
   })
   .catch(function() {
+    window._fotoUploadando = false;
+    if (btnSalvar) { btnSalvar.disabled = false; btnSalvar.textContent = '💾 Salvar'; }
     showToast('⚠️ Sem conexão - foto salva localmente', 'warning');
     // Fallback: base64 local
     var r3 = new FileReader();
@@ -6574,6 +6584,7 @@ function editProduto(cod) {
 }
 
 function saveProduto() {
+  if (window._fotoUploadando) { showToast('⏳ Aguarde o upload da foto terminar!','warning'); return; }
   const cod = document.getElementById('prod-cod').value.trim().toUpperCase();
   const desc = document.getElementById('prod-desc').value.trim();
   if (!cod || !desc) { showToast('Código e descrição são obrigatórios!','error'); return; }
@@ -6598,14 +6609,22 @@ function saveProduto() {
     arr.push(obj);
   }
   save('produtos', arr);
+  // Sync imediato com Firebase para garantir que foto Cloudinary seja salva
+  if (window._firebaseReady && window._fb) {
+    window._fb.saveCollection('produtos', arr).then(function(ok) {
+      if (ok) {
+        localStorage.setItem('otica_ultimo_sync', Date.now().toString());
+        if (typeof atualizarSyncIndicator === 'function') atualizarSyncIndicator();
+        if (typeof mostrarConfirmacaoSync === 'function') mostrarConfirmacaoSync();
+      }
+    });
+  }
   document.getElementById('prod-cod').disabled = false;
   document.getElementById('prod-idx').value = '';
   document.getElementById('modal-produto-title').textContent = '📦 Novo Produto';
   closeModal('modal-produto');
   renderProdutos();
-  showToast(idx ? 'Produto atualizado!' : 'Produto cadastrado!');
-  // Catalogo atualizado manualmente via botao 'Meu Catalogo' na sidebar
-  // (download automatico desativado)
+  showToast(idx ? 'Produto atualizado! ☁️ Sincronizando...' : 'Produto cadastrado! ☁️ Sincronizando...');
 }
 
 function entradaEstoque(cod) {
