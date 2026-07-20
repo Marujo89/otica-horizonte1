@@ -2291,6 +2291,7 @@ function instalarApp() {
 <button class="btn btn-outline" id="btn-historico-estoque" onclick="toggleHistoricoEstoque()">📋 Histórico</button>
 <button class="btn btn-warning" onclick="checkEstoque()">⚠️ Verificar Estoque</button>
 <button class="btn btn-primary" id="btn-novo-produto" onclick="openModal('modal-produto')">➕ Novo Produto</button>
+<button class="btn btn-outline" onclick="forceSyncFotos()" data-tip="Enviar produtos com fotos para a nuvem" style="font-size:12px">🔄 Sync Fotos</button>
 </div>
 </div>
 <div class="card" id="card-historico-estoque" style="display:none" style="margin-bottom:20px;display:none">
@@ -6466,6 +6467,30 @@ function calcMargem() {
   const c = parseFloat(document.getElementById('prod-custo').value)||0;
   const v = parseFloat(document.getElementById('prod-venda').value)||0;
   document.getElementById('prod-margem').value = v>0 ? fmtPct((v-c)/v*100) : '0.0%';
+}
+
+
+function forceSyncFotos() {
+  var produtos = load('produtos');
+  var comFoto = produtos.filter(function(p){ return p.foto && p.foto.startsWith('https://'); });
+  var comCatalogo = produtos.filter(function(p){ return p.catalogo === true; });
+  
+  if (!window._firebaseReady || !window._fb) {
+    showToast('Firebase nao conectado. Tente em instantes.', 'warning');
+    return;
+  }
+  
+  showToast('⏳ Sincronizando ' + produtos.length + ' produtos com ' + comFoto.length + ' fotos...', 'success');
+  
+  window._fb.saveCollection('produtos', produtos).then(function(ok) {
+    if (ok) {
+      localStorage.setItem('otica_ultimo_sync', Date.now().toString());
+      if (typeof atualizarSyncIndicator === 'function') atualizarSyncIndicator();
+      showToast('✅ ' + produtos.length + ' produtos sincronizados! ' + comFoto.length + ' com foto, ' + comCatalogo.length + ' no catálogo.', 'success');
+    } else {
+      showToast('⚠️ Erro ao sincronizar. Verifique a conexão.', 'warning');
+    }
+  });
 }
 
 function renderProdutos() {
