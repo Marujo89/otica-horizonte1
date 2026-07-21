@@ -10820,19 +10820,26 @@ function salvarRascunhoVendaUnif() {
 function onChangePagamento() {
   var pagEl = document.getElementById('venda-pag');
   var pag = pagEl ? pagEl.value : '';
+  mostrarOcultarCrediario(pag);
+}
+
+function mostrarOcultarCrediario(pag) {
   var credBox = document.getElementById('venda-crediario-box');
-  if (credBox) {
-    if (pag === 'Crediário Próprio') {
-      credBox.style.display = 'block';
-      credBox.style.background = '#fef3c7';
-      credBox.style.borderBottom = '2px solid #d97706';
-      credBox.style.padding = '10px 20px';
-      atualizarPreviewCrediario();
-    } else {
-      credBox.style.display = 'none';
-    }
+  if (!credBox) return;
+  if (pag === 'Crediário Próprio') {
+    credBox.setAttribute('style', 'display:block;background:#fef3c7;border-bottom:2px solid #d97706;padding:10px 20px');
+    atualizarPreviewCrediario();
+  } else {
+    credBox.setAttribute('style', 'display:none');
   }
 }
+
+// Event delegation global - captura mudancas no select venda-pag
+document.addEventListener('change', function(e) {
+  if (e.target && e.target.id === 'venda-pag') {
+    mostrarOcultarCrediario(e.target.value);
+  }
+});
 
 function atualizarPreviewCrediario() {
   var preview = document.getElementById('cred-preview');
@@ -10867,6 +10874,9 @@ function salvarOrcamentoVendaUnif() {
   var total = Math.max(0, subtotal - descReais);
 
   var arr = load('composicoes');
+  // Gerar descricao resumida dos itens
+  var descItens = _vendaItens.map(function(i){ return i.nome; }).join(' + ');
+  if (descItens.length > 60) descItens = descItens.substring(0,57)+'...';
   var obj = {
     id: nextId(arr),
     data: (document.getElementById('venda-data')||{}).value || '',
@@ -10874,6 +10884,8 @@ function salvarOrcamentoVendaUnif() {
     itens: _vendaItens,
     desconto: descReais,
     total: total,
+    totalCli: total,
+    desc: descItens,
     status: 'aberto'
   };
   arr.push(obj);
