@@ -2372,9 +2372,10 @@ function instalarApp() {
 </div>
 </div>
 <!-- ── Crediário — Contas a Receber ── -->
-<div class="card" id="card-contas-crediario" style="margin-bottom:20px;display:none">
-<div class="card-header" style="background:linear-gradient(135deg,#0d2b4e,#1a4a7a);border-radius:14px 14px 0 0">
+<div class="card" id="card-contas-crediario" style="margin-bottom:12px;display:none">
+<div class="card-header" style="background:linear-gradient(135deg,#0d2b4e,#1a4a7a);border-radius:14px 14px 0 0;cursor:pointer" onclick="toggleCard('crediario-body','crediario-icon')">
 <h3 style="color:#e8c96a">💳 Crediário — Parcelas a Receber</h3>
+<span id="crediario-icon" style="color:#e8c96a">▼</span>
 </div>
 <div class="card-body">
 <div class="cards-grid" id="contas-crediario-cards" style="margin-bottom:12px"></div>
@@ -2385,10 +2386,10 @@ function instalarApp() {
 </div>
 </div>
 <!-- ── Contas a Receber (vendas pendentes) ── -->
-<div class="card" id="card-contas-receber" style="margin-bottom:20px;display:none">
-<div class="card-header" style="background:linear-gradient(135deg,#dc2626,#f87171);border-radius:14px 14px 0 0">
-<h3 style="color:white">💳 Vendas Pendentes</h3>
-<span id="contas-receber-total" style="font-size:12px;color:rgba(255,255,255,.8)"></span>
+<div class="card" id="card-contas-receber" style="margin-bottom:12px;display:none">
+<div class="card-header" style="background:linear-gradient(135deg,#dc2626,#f87171);border-radius:14px 14px 0 0;cursor:pointer" onclick="toggleCard('contas-receber-body','receber-icon')">
+<h3 style="color:white">⏳ Vendas Pendentes <span id="contas-receber-total" style="font-size:12px;opacity:.8"></span></h3>
+<span id="receber-icon" style="color:white">▼</span>
 </div>
 <div id="contas-receber-body">
 <div style="padding:20px;text-align:center;color:var(--text-muted);font-size:13px">
@@ -2397,10 +2398,10 @@ function instalarApp() {
 </div>
 </div>
 <!-- ── Orçamentos Pendentes ── -->
-<div class="card" id="card-orcamentos-pendentes" style="margin-bottom:20px">
-<div class="card-header" style="background:linear-gradient(135deg,#1d4ed8,#3b82f6);border-radius:14px 14px 0 0">
-<h3 style="color:white">📋 Orçamentos Pendentes</h3>
-<span id="orcamentos-count" style="font-size:12px;color:rgba(255,255,255,.7)">0 orçamento(s)</span>
+<div class="card" id="card-orcamentos-pendentes" style="margin-bottom:12px">
+<div class="card-header" style="background:linear-gradient(135deg,#1d4ed8,#3b82f6);border-radius:14px 14px 0 0;cursor:pointer" onclick="toggleCard('orcamentos-pendentes-body','orc-icon')">
+<h3 style="color:white">📋 Orçamentos <span id="orcamentos-count" style="font-size:12px;opacity:.8">0</span></h3>
+<span id="orc-icon" style="color:white">▼</span>
 </div>
 <div id="orcamentos-pendentes-body">
 <div style="padding:20px;text-align:center;color:var(--text-muted);font-size:13px">
@@ -6164,6 +6165,8 @@ function editProduto(cod) {
   calcMargem();
   carregarFotoProduto(p.foto||'');
   document.getElementById('prod-catalogo').checked = p.catalogo||false;
+  // Aplicar regras de categoria (ocultar qtd para servicos)
+  onChangeProdCat();
   openModal('modal-produto');
 }
 
@@ -6293,6 +6296,16 @@ function renderVendasHoje() {
     + (adminV?'<div style="background:rgba(255,255,255,.1);border-radius:8px;padding:10px;text-align:center"><div style="font-size:10px;color:rgba(255,255,255,.6)">Receita</div><div style="font-size:18px;font-weight:800;color:#34d399">'+fmtMoney(receitaHoje)+'</div></div>':'')
     + (adminV?'<div style="background:rgba(255,255,255,.1);border-radius:8px;padding:10px;text-align:center"><div style="font-size:10px;color:rgba(255,255,255,.6)">Ticket Médio</div><div style="font-size:18px;font-weight:800;color:#e8c96a">'+fmtMoney(ticketHoje)+'</div></div>':'')
     + '</div></div>';
+}
+
+
+function toggleCard(bodyId, iconId) {
+  var body = document.getElementById(bodyId);
+  var icon = document.getElementById(iconId);
+  if (!body) return;
+  var oculto = body.style.display === 'none';
+  body.style.display = oculto ? '' : 'none';
+  if (icon) icon.textContent = oculto ? '▼' : '▶';
 }
 
 function renderVendas() {
@@ -11454,24 +11467,49 @@ function gerarParcelasCrediario(total, num, intervalo, primeiraData) {
 }
 
 function getCrediarioData() {
-  var pag = document.getElementById('venda-pag').value;
+  var pag = (document.getElementById('venda-pag')||{}).value||'';
   if (pag !== 'Crediário Próprio') return null;
-  var entrada = parseFloat(document.getElementById('cred-entrada-valor')?.value)||0;
+
+  // Calcular total da venda atual
+  var total = 0;
+  if (typeof _vendaItens !== 'undefined' && _vendaItens.length > 0) {
+    // Novo modal unificado
+    var subtotal = _vendaItens.reduce(function(s,i){ return s+i.preco*i.qtd; },0);
+    var descReais = parseFloat((document.getElementById('venda-unif-desc-reais')||{}).value)||0;
+    total = Math.max(0, subtotal - descReais);
+  } else if (typeof _carrinho !== 'undefined' && _carrinho.length > 0) {
+    // Modal antigo (fallback)
+    var subtotal2 = _carrinho.reduce(function(s,item){ var b=item.preco*item.qtd; return s+b-b*(item.desc/100); },0);
+    var descGlobal = parseFloat((document.getElementById('venda-desc-global-reais')||{}).value)||0;
+    total = Math.max(0, subtotal2 - descGlobal);
+  }
+
+  if (total <= 0) { showToast('Adicione produtos antes de configurar o crediário!','error'); return false; }
+
+  var entrada = parseFloat((document.getElementById('cred-entrada')||{}).value)||0;
   if (entrada <= 0) { showToast('Informe o valor da entrada do crediário!','error'); return false; }
-  var subtotal = _carrinho.reduce(function(s,item){ var b=item.preco*item.qtd; return s+b-b*(item.desc/100); },0);
-  var descGlobal = parseFloat(document.getElementById('venda-desc-global-reais')?.value)||0;
-  var total = Math.max(0, subtotal - descGlobal);
   if (entrada >= total) { showToast('Entrada não pode ser maior ou igual ao total!','error'); return false; }
+
   var restante = total - entrada;
-  var numParc = parseInt(document.getElementById('cred-num-parcelas')?.value)||1;
-  var intervalo = parseInt(document.getElementById('cred-intervalo')?.value)||30;
-  var primeiraData = document.getElementById('cred-primeira-data')?.value;
-  if (!primeiraData) { showToast('Informe a data da primeira parcela!','error'); return false; }
-  var entradaPag = document.getElementById('cred-entrada-pag')?.value||'Dinheiro';
-  var entradaParc = parseInt(document.getElementById('cred-entrada-parcelas')?.value)||1;
+  var numParc = parseInt((document.getElementById('cred-parcelas')||{}).value)||2;
+  var periodo = (document.getElementById('cred-periodo')||{}).value||'mensal';
+  var intervalo = periodo==='quinzenal' ? 15 : periodo==='semanal' ? 7 : 30;
+
+  // Calcular data da primeira parcela
+  var hoje = new Date();
+  var dp = new Date(hoje.getTime() + intervalo*86400000);
+  var primeiraData = dp.getFullYear()+'-'+String(dp.getMonth()+1).padStart(2,'0')+'-'+String(dp.getDate()).padStart(2,'0');
+
+  var entradaPag = (document.getElementById('cred-entrada-pag')||{}).value||'Dinheiro';
+
   return {
-    entrada, entradaPag, entradaParc,
-    restante, numParc, intervalo, primeiraData,
+    entrada: entrada,
+    entradaPag: entradaPag,
+    entradaParc: 1,
+    restante: restante,
+    numParc: numParc,
+    intervalo: intervalo,
+    primeiraData: primeiraData,
     parcelas: gerarParcelasCrediario(restante, numParc, intervalo, primeiraData)
   };
 }
