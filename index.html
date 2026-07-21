@@ -3505,13 +3505,6 @@ function instalarApp() {
         </div>
       </div>
 
-      <!-- Total -->
-      <div style="background:linear-gradient(135deg,#c9a84c,#e8c96a);border-radius:10px;padding:14px;margin-bottom:12px;text-align:center">
-        <div style="font-size:11px;color:#0d2b4e;font-weight:700;margin-bottom:4px">TOTAL</div>
-        <div id="venda-unif-total" style="font-size:28px;font-weight:800;color:#0d2b4e">R$ 0,00</div>
-        <div id="venda-unif-desc-info" style="font-size:11px;color:#0d2b4e;opacity:0.7;margin-top:2px"></div>
-      </div>
-
       <!-- Crediário -->
       <div id="venda-crediario-box" style="display:none;background:#fef3c7;border:1px solid #d97706;border-radius:10px;padding:12px;margin-bottom:10px">
         <div style="font-size:12px;font-weight:700;color:#92400e;margin-bottom:8px">💳 Crediário Próprio</div>
@@ -3523,6 +3516,14 @@ function instalarApp() {
         </div>
         <div id="cred-preview" style="font-size:11px;color:#92400e;background:rgba(217,119,6,.1);border-radius:6px;padding:6px;margin-top:4px"></div>
       </div>
+      <!-- Total -->
+      <div style="background:linear-gradient(135deg,#c9a84c,#e8c96a);border-radius:10px;padding:14px;margin-bottom:12px;text-align:center">
+        <div style="font-size:11px;color:#0d2b4e;font-weight:700;margin-bottom:4px">TOTAL</div>
+        <div id="venda-unif-total" style="font-size:28px;font-weight:800;color:#0d2b4e">R$ 0,00</div>
+        <div id="venda-unif-desc-info" style="font-size:11px;color:#0d2b4e;opacity:0.7;margin-top:2px"></div>
+      </div>
+
+
       <!-- Botões -->
       <button onclick="salvarOrcamentoVendaUnif()" style="width:100%;padding:10px;background:rgba(255,255,255,.15);color:white;border:1px solid rgba(255,255,255,.3);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:6px">
         📋 Salvar como Orçamento
@@ -10738,7 +10739,14 @@ function onChangePagamento() {
       ? 'display:block!important;background:#fef3c7;border:1px solid #d97706;border-radius:10px;padding:12px;margin-bottom:10px'
       : 'display:none!important';
   }
-  if (pag === 'Crediário Próprio') atualizarPreviewCrediario();
+  if (pag === 'Crediário Próprio') {
+    atualizarPreviewCrediario();
+    // Scroll para mostrar o crediario
+    setTimeout(function() {
+      var box = document.getElementById('venda-crediario-box');
+      if (box) box.scrollIntoView({behavior:'smooth', block:'nearest'});
+    }, 100);
+  }
 }
 
 function atualizarPreviewCrediario() {
