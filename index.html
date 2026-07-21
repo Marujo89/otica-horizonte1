@@ -10435,10 +10435,28 @@ var _vendaItens = []; // [{cod, nome, cat, preco, custo, qtd, tipo, grupo}]
 var _vendaGrupoAtual = null; // grupo de oculos completo em montagem
 
 function initVendaModal() {
+  // Limpar tudo
   _vendaItens = [];
   _vendaGrupoAtual = null;
+  window._pendingOculos = null;
   renderVendaItens();
   calcVendaTotais();
+
+  // Limpar campos
+  var clienteBusca = document.getElementById('venda-cliente-busca');
+  if (clienteBusca) clienteBusca.value = '';
+  var clienteSelect = document.getElementById('venda-cliente');
+  if (clienteSelect) clienteSelect.value = '';
+  var pagSelect = document.getElementById('venda-pag');
+  if (pagSelect) pagSelect.value = 'PIX';
+  var descReais = document.getElementById('venda-unif-desc-reais');
+  if (descReais) descReais.value = '';
+  var descPct = document.getElementById('venda-unif-desc-pct');
+  if (descPct) descPct.value = '';
+  var credEntrada = document.getElementById('cred-entrada');
+  if (credEntrada) credEntrada.value = '';
+  var credPreview = document.getElementById('cred-preview');
+  if (credPreview) credPreview.textContent = '';
 
   // Data local
   var d = new Date();
@@ -10451,6 +10469,10 @@ function initVendaModal() {
   var vendEl = document.getElementById('venda-vendedor');
   if (vendEl && user) vendEl.value = user.nome || '';
 
+  // Status padrao
+  var statusEl = document.getElementById('venda-status');
+  if (statusEl) statusEl.value = 'Pago';
+
   // Cliente
   populateClienteSelect('venda-cliente');
 
@@ -10458,23 +10480,20 @@ function initVendaModal() {
   var painelWrap = document.getElementById('venda-painel-interno-wrap');
   if (painelWrap) painelWrap.style.display = isAdmin() ? '' : 'none';
 
+  // Garantir crediario oculto (pag = PIX)
+  var credBox = document.getElementById('venda-crediario-box');
+  if (credBox) credBox.style.display = 'none';
+
+  // Adicionar listener no select de pagamento
+  if (pagSelect) {
+    pagSelect.onchange = onChangePagamento;
+  }
+
   // Focar na busca
   setTimeout(function() {
     var b = document.getElementById('venda-busca-unif');
     if (b) b.focus();
   }, 100);
-  // Garantir estado correto do crediario
-  onChangePagamento();
-
-  // Restaurar rascunho
-  try {
-    var r = JSON.parse(localStorage.getItem('otica_rascunho_venda')||'null');
-    if (r && r.itens && r.itens.length > 0) {
-      _vendaItens = r.itens;
-      renderVendaItens();
-      calcVendaTotais();
-    }
-  } catch(e) {}
 }
 
 function togglePainelInternoVenda() {
@@ -10859,10 +10878,13 @@ function salvarOrcamentoVendaUnif() {
   };
   arr.push(obj);
   save('composicoes', arr);
-  showToast('📋 Orçamento salvo! Acesse em Orçamentos para fechar a venda.', 'success');
+  showToast('📋 Orçamento salvo! Aparece em Orçamentos Pendentes.', 'success');
   closeModal('modal-venda');
   _vendaItens = [];
+  _vendaGrupoAtual = null;
   localStorage.removeItem('otica_rascunho_venda');
+  // Atualizar modulo de vendas
+  if (typeof renderVendas === 'function') renderVendas();
 }
 
 function registrarVendaUnif() {
