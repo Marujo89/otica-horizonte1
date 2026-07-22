@@ -7268,6 +7268,9 @@ function editOS(id) {
   document.getElementById('os-tipo').disabled = isMontagem; // tipo fixo em montagem
   document.getElementById('os-armacao').value = o.armacao||'';
   document.getElementById('os-tecnico').value = o.tecnico||'';
+  // Atualizar label tecnico/laboratorio
+  var tecLabel = document.getElementById('os-tecnico-label');
+  if (tecLabel) tecLabel.textContent = isMontagem ? 'Laboratório' : 'Técnico Responsável';
   document.getElementById('os-abertura').value = o.abertura||'';
   document.getElementById('os-previsao').value = o.previsao||'';
   document.getElementById('os-status').value = o.status||'Aberta';
@@ -9252,6 +9255,29 @@ function renderGraficos() {
       anivBox.style.display = 'none';
     }
   }
+}
+
+
+function abrirWhatsAppOS(id) {
+  var o = load('os').find(function(x){ return x.id===id; });
+  if (!o) return;
+  var clMap = Object.fromEntries(load('clientes').map(function(c){ return [c.id, {nome:c.nome, tel:c.tel}]; }));
+  var cli = clMap[o.clienteId] || {nome:'Cliente', tel:''};
+  var tel = cli.tel ? cli.tel.replace(/\D/g,'') : '';
+  if (!tel) { showToast('Cliente sem telefone cadastrado!', 'warning'); return; }
+  // Adicionar 55 se nao tiver
+  if (!tel.startsWith('55')) tel = '55' + tel;
+  
+  var msg = '';
+  if (o.status === 'Aguardando Retirada' || o.status === 'Entregue') {
+    msg = 'Ola ' + cli.nome.split(' ')[0] + '! \n\nSua OS *' + o.id + '* esta pronta para retirada!\n\nServico: ' + o.tipo + '\n\nEstamos aguardando sua visita!\n\n_Otica Horizonte - Seu olhar, nosso compromisso._';
+  } else if (o.status === 'Em Producao' || o.status === 'Em Produção') {
+    msg = 'Ola ' + cli.nome.split(' ')[0] + '! \n\nSua OS *' + o.id + '* esta em producao.\n\nServico: ' + o.tipo + '\nPrevisao: ' + (o.previsao ? new Date(o.previsao+'T12:00:00').toLocaleDateString('pt-BR') : '-') + '\n\nAssim que ficar pronta, avisamos!\n\n_Otica Horizonte - Seu olhar, nosso compromisso._';
+  } else {
+    msg = 'Ola ' + cli.nome.split(' ')[0] + '! \n\nSua OS *' + o.id + '* foi registrada.\n\nServico: ' + o.tipo + '\nStatus: ' + o.status + '\n\nQualquer duvida, estamos a disposicao!\n\n_Otica Horizonte - Seu olhar, nosso compromisso._';
+  }
+  
+  window.open('https://wa.me/' + tel + '?text=' + encodeURIComponent(msg), '_blank');
 }
 
 function abrirWhatsAppAniv(nome, tel) {
