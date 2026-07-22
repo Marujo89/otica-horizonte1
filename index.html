@@ -8041,32 +8041,45 @@ function openNovoAgendamento() {
 
 function filtrarClientesAgend(q) {
   var lista = document.getElementById('agend-cliente-lista');
-  var hiddenInput = document.getElementById('agend-cliente');
   if (!lista) return;
-  if (!q || q.length < 1) { lista.style.display='none'; return; }
-  var clientes = load('clientes').filter(function(c){ return c.ativo !== false; });
+  if (!q || q.length < 1) { lista.style.display = 'none'; return; }
+  var clientes = load('clientes').filter(function(c) { return c.ativo !== false; });
   var ql = q.toLowerCase();
-  var filtrados = clientes.filter(function(c){
-    return (c.nome||'').toLowerCase().includes(ql) ||
-           (c.cpf||'').includes(q) ||
-           (c.telefone||'').includes(q);
-  }).slice(0,8);
-  if (!filtrados.length) { lista.style.display='none'; return; }
-  lista.innerHTML = filtrados.map(function(c){
-    return '<div onclick="selecionarClienteAgend('+c.id+',''+c.nome.replace(/'/g,"\'")+'')" '+
-      'style="padding:10px 14px;cursor:pointer;border-bottom:1px solid #f1f5f9;font-size:13px;color:var(--text-primary)" '+
-      'onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">' +
-      '<strong>' + c.nome + '</strong>' +
-      (c.telefone ? ' <span style="color:#64748b;font-size:11px">— ' + c.telefone + '</span>' : '') +
-      '</div>';
-  }).join('');
+  var filtrados = clientes.filter(function(c) {
+    return (c.nome || '').toLowerCase().includes(ql) ||
+           (c.cpf || '').includes(q) ||
+           (c.telefone || '').includes(q);
+  }).slice(0, 8);
+  lista.innerHTML = '';
+  if (!filtrados.length) { lista.style.display = 'none'; return; }
+  filtrados.forEach(function(c) {
+    var div = document.createElement('div');
+    div.style.cssText = 'padding:10px 14px;cursor:pointer;border-bottom:1px solid #f1f5f9;font-size:13px;color:var(--text-primary)';
+    div.onmouseover = function() { this.style.background = '#f8fafc'; };
+    div.onmouseout = function() { this.style.background = ''; };
+    div.onclick = function() { selecionarClienteAgend(c.id, c.nome || ''); };
+    var strong = document.createElement('strong');
+    strong.textContent = c.nome || '';
+    div.appendChild(strong);
+    if (c.telefone) {
+      var span = document.createElement('span');
+      span.style.cssText = 'color:#64748b;font-size:11px';
+      span.textContent = ' — ' + c.telefone;
+      div.appendChild(span);
+    }
+    lista.appendChild(div);
+  });
   lista.style.display = 'block';
 }
 
+
 function selecionarClienteAgend(id, nome) {
-  document.getElementById('agend-cliente').value = id;
-  document.getElementById('agend-cliente-busca').value = nome;
-  document.getElementById('agend-cliente-lista').style.display = 'none';
+  var hiddenEl = document.getElementById('agend-cliente');
+  var buscaEl = document.getElementById('agend-cliente-busca');
+  var listaEl = document.getElementById('agend-cliente-lista');
+  if (hiddenEl) hiddenEl.value = id;
+  if (buscaEl) buscaEl.value = nome || '';
+  if (listaEl) listaEl.style.display = 'none';
 }
 
 function renderAgendamentos() {
