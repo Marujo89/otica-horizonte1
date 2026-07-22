@@ -3664,6 +3664,145 @@ function instalarApp() {
 </div>
 </div>
 </div>
+<!-- Modal OS Principal -->
+<div class="modal-overlay" id="modal-os" style="display:none">
+<div class="modal" style="max-width:700px">
+<div class="modal-header">
+<h3 id="modal-os-title">🔧 Nova Ordem de Serviço</h3>
+<button class="modal-close" onclick="closeModal('modal-os')">✕</button>
+</div>
+<div class="modal-body">
+<input id="os-idx" type="hidden"/>
+<div class="form-grid">
+
+<!-- Cliente -->
+<div class="form-group" style="grid-column:1/-1">
+<label>Cliente *</label>
+<div style="position:relative">
+<input id="os-cliente-busca" type="text" placeholder="🔍 Buscar cliente..." autocomplete="off"
+  oninput="filtrarClienteBusca('os-cliente-busca','os-cliente-lista','os-cliente')"
+  onfocus="filtrarClienteBusca('os-cliente-busca','os-cliente-lista','os-cliente')"
+  style="width:100%"/>
+<div id="os-cliente-lista" style="display:none;position:absolute;top:100%;left:0;z-index:999;background:white;border:1px solid #dde3ee;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.2);padding:0;min-width:300px;margin-top:4px"></div>
+<select id="os-cliente" style="display:none"></select>
+</div>
+</div>
+
+<!-- Tipo -->
+<div class="form-group">
+<label>Tipo de Serviço *</label>
+<select id="os-tipo">
+<option>Óculos de Grau — Montagem</option>
+<option>Óculos Solar — Montagem</option>
+<option>Lente de Contato</option>
+<option>Conserto de Armação — Solda</option>
+<option>Conserto de Armação — Parafuso</option>
+<option>Conserto de Armação — Haste</option>
+<option>Conserto de Armação — Plaqueta</option>
+<option>Ajuste de Armação</option>
+<option>Troca de Lente — Arranhada</option>
+<option>Troca de Lente — Quebrada</option>
+<option>Troca de Lente — Graduação</option>
+<option>Adaptação de Lente</option>
+<option>Outros</option>
+</select>
+</div>
+
+<!-- Armação -->
+<div class="form-group">
+<label>Armação (Ref.)</label>
+<input id="os-armacao" placeholder="Ex: ARM-001" type="text"/>
+</div>
+
+<!-- Abertura e Previsão -->
+<div class="form-group">
+<label>Data Abertura</label>
+<input id="os-abertura" type="date"/>
+</div>
+<div class="form-group">
+<label>Previsão Entrega</label>
+<input id="os-previsao" type="date"/>
+</div>
+
+<!-- Técnico e Status -->
+<div class="form-group">
+<label>Técnico Responsável</label>
+<input id="os-tecnico" placeholder="Nome do técnico" type="text"/>
+</div>
+<div class="form-group">
+<label>Status</label>
+<select id="os-status">
+<option>Aberta</option>
+<option>Em Produção</option>
+<option>Aguardando Retirada</option>
+<option>Entregue</option>
+<option>Cancelada</option>
+</select>
+</div>
+
+<!-- Cobrança (oculto) -->
+<input id="os-cobranca" type="hidden" value="cobrado"/>
+
+<!-- Valor (oculto para montagem) -->
+<div class="form-group" id="os-valor-group">
+<label>Valor Total (R$)</label>
+<input id="os-valor" min="0" placeholder="0,00" step="0.01" type="number"/>
+</div>
+
+<!-- Descrição do serviço (só conserto) -->
+<div class="form-group" style="grid-column:1/-1">
+<label>Descrição do Serviço</label>
+<input id="os-descricao" placeholder="Descreva o serviço a ser realizado" type="text"/>
+</div>
+
+<!-- Receita Óptica (montagem) -->
+<div class="form-group" style="grid-column:1/-1">
+<div style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:8px" onclick="toggleOsReceita()">
+<span style="font-size:13px;font-weight:700;color:#0d2b4e">👁️ Receita Óptica (Longe/Perto)</span>
+<span id="os-receita-arrow" style="color:#0d2b4e">▼</span>
+</div>
+<div id="os-receita-box" style="display:none">
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;background:#f8fafc;padding:12px;border-radius:8px;margin-bottom:8px">
+<div style="grid-column:1/-1;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase">LONGE</div>
+<div><label style="font-size:10px">OD Esf</label><input id="os-longe-od-esf" type="number" step="0.25" style="width:100%;padding:4px;border:1px solid #dde3ee;border-radius:4px;font-size:12px"/></div>
+<div><label style="font-size:10px">OD Cil</label><input id="os-longe-od-cil" type="number" step="0.25" style="width:100%;padding:4px;border:1px solid #dde3ee;border-radius:4px;font-size:12px"/></div>
+<div><label style="font-size:10px">OD Eixo</label><input id="os-longe-od-eixo" type="number" style="width:100%;padding:4px;border:1px solid #dde3ee;border-radius:4px;font-size:12px"/></div>
+<div></div>
+<div><label style="font-size:10px">OE Esf</label><input id="os-longe-oe-esf" type="number" step="0.25" style="width:100%;padding:4px;border:1px solid #dde3ee;border-radius:4px;font-size:12px"/></div>
+<div><label style="font-size:10px">OE Cil</label><input id="os-longe-oe-cil" type="number" step="0.25" style="width:100%;padding:4px;border:1px solid #dde3ee;border-radius:4px;font-size:12px"/></div>
+<div><label style="font-size:10px">OE Eixo</label><input id="os-longe-oe-eixo" type="number" style="width:100%;padding:4px;border:1px solid #dde3ee;border-radius:4px;font-size:12px"/></div>
+<div></div>
+</div>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;background:#f8fafc;padding:12px;border-radius:8px;margin-bottom:8px">
+<div style="grid-column:1/-1;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase">PERTO</div>
+<div><label style="font-size:10px">OD Esf</label><input id="os-perto-od-esf" type="number" step="0.25" style="width:100%;padding:4px;border:1px solid #dde3ee;border-radius:4px;font-size:12px"/></div>
+<div><label style="font-size:10px">OD Cil</label><input id="os-perto-od-cil" type="number" step="0.25" style="width:100%;padding:4px;border:1px solid #dde3ee;border-radius:4px;font-size:12px"/></div>
+<div><label style="font-size:10px">OD Eixo</label><input id="os-perto-od-eixo" type="number" style="width:100%;padding:4px;border:1px solid #dde3ee;border-radius:4px;font-size:12px"/></div>
+<div></div>
+<div><label style="font-size:10px">OE Esf</label><input id="os-perto-oe-esf" type="number" step="0.25" style="width:100%;padding:4px;border:1px solid #dde3ee;border-radius:4px;font-size:12px"/></div>
+<div><label style="font-size:10px">OE Cil</label><input id="os-perto-oe-cil" type="number" step="0.25" style="width:100%;padding:4px;border:1px solid #dde3ee;border-radius:4px;font-size:12px"/></div>
+<div><label style="font-size:10px">OE Eixo</label><input id="os-perto-oe-eixo" type="number" style="width:100%;padding:4px;border:1px solid #dde3ee;border-radius:4px;font-size:12px"/></div>
+<div><label style="font-size:10px">Adição</label><input id="os-adicao" type="number" step="0.25" style="width:100%;padding:4px;border:1px solid #dde3ee;border-radius:4px;font-size:12px"/></div>
+</div>
+</div>
+</div>
+
+<!-- Observações -->
+<div class="form-group" style="grid-column:1/-1">
+<label>Observações</label>
+<textarea id="os-obs" rows="2" placeholder="Observações adicionais" style="width:100%;padding:8px;border:1px solid #dde3ee;border-radius:8px;font-size:13px;resize:vertical"></textarea>
+</div>
+
+</div>
+<div class="form-actions">
+<button class="btn btn-primary" onclick="saveOS()">💾 Salvar OS</button>
+<button class="btn btn-outline" onclick="closeModal('modal-os')">Cancelar</button>
+</div>
+</div>
+</div>
+</div>
+
+
 <!-- Modal OS → Caixa -->
 <div class="modal-overlay" id="modal-os-caixa" style="display:none">
 <div class="modal" style="max-width:440px">
@@ -7007,6 +7146,16 @@ function atualizarStatusOS(id) {
     renderOS();
     showToast('Status atualizado!');
   }
+}
+
+
+function toggleOsReceita() {
+  var box = document.getElementById('os-receita-box');
+  var arrow = document.getElementById('os-receita-arrow');
+  if (!box) return;
+  var oculto = box.style.display === 'none';
+  box.style.display = oculto ? 'block' : 'none';
+  if (arrow) arrow.textContent = oculto ? '▲' : '▼';
 }
 
 function editOS(id) {
