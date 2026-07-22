@@ -6976,8 +6976,10 @@ function viewOS(id) {
   </div>
   </div>`;
 
-  document.getElementById('view-os-body').innerHTML = html;
-  openModal('modal-view-os');
+  // Usar modal de visualizacao existente
+  var viewEl = document.getElementById('view-prod-content');
+  if (viewEl) { viewEl.innerHTML = html; openModal('modal-visualizar-produto'); }
+  else { alert('OS: ' + o.id + ' | ' + (clMap[o.clienteId]||'-') + ' | ' + o.status); }
 }
 
 function atualizarStatusOS(id) {
