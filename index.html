@@ -3803,6 +3803,19 @@ function instalarApp() {
 </div>
 
 
+
+<!-- Modal View OS -->
+<div class="modal-overlay" id="modal-view-os" style="display:none">
+<div class="modal" style="max-width:700px">
+<div class="modal-header" style="background:linear-gradient(135deg,#0d2b4e,#1a4a7a)">
+<h3 style="color:#e8c96a">Detalhes da OS</h3>
+<button class="modal-close" onclick="closeModal('modal-view-os')">x</button>
+</div>
+<div class="modal-body" style="padding:0"><div id="modal-view-os-body"></div></div>
+<div class="modal-footer" style="padding:14px 20px;border-top:1px solid #e2e8f0;display:flex;gap:8px;flex-wrap:wrap" id="modal-view-os-btns"></div>
+</div>
+</div>
+
 <!-- Modal OS → Caixa -->
 <div class="modal-overlay" id="modal-os-caixa" style="display:none">
 <div class="modal" style="max-width:440px">
@@ -7116,9 +7129,21 @@ function viewOS(id) {
   </div>`;
 
   // Usar modal de visualizacao existente
-  var viewEl = document.getElementById('view-prod-content');
-  if (viewEl) { viewEl.innerHTML = html; openModal('modal-visualizar-produto'); }
-  else { alert('OS: ' + o.id + ' | ' + (clMap[o.clienteId]||'-') + ' | ' + o.status); }
+  var viewEl = document.getElementById('modal-view-os-body');
+  if (viewEl) {
+    viewEl.innerHTML = html;
+    var btnsEl = document.getElementById('modal-view-os-btns');
+    if (btnsEl) {
+      btnsEl.innerHTML = '<button class="btn btn-primary" onclick="imprimirOS(\''+o.id+'\')" style="background:#0d2b4e">Imprimir OS</button>'
+        + (isAdmin() ? '<button class="btn btn-warning" onclick="closeModal(\'modal-view-os\');editOS(\''+o.id+'\')" style="margin-left:8px">Editar</button>' : '')
+        + (o.tipoOS!=='montagem' && isAdmin() ? '<button class="btn btn-success" onclick="closeModal(\'modal-view-os\');converterOSemVenda(\''+o.id+'\')" style="margin-left:8px">Converter em Venda</button>' : '')
+        + '<button class="btn btn-outline" onclick="closeModal(\'modal-view-os\')" style="margin-left:8px">Fechar</button>';
+    }
+    openModal('modal-view-os');
+  } else {
+    var viewEl2 = document.getElementById('view-prod-content');
+    if (viewEl2) { viewEl2.innerHTML = html; openModal('modal-visualizar-produto'); }
+  }
 }
 
 function atualizarStatusOS(id) {
@@ -7622,7 +7647,7 @@ function imprimirOS(id) {
   .rodape { text-align: center; margin-top: 14px; padding-top: 10px; border-top: 1px solid #eef1f8; font-size: 9px; color: #8a9ab8; font-style: italic; }
   .obs-box { background: #f8faff; border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; border-left: 3px solid #8a9ab8; }
   .status-badge { display: inline-block; padding: 3px 12px; border-radius: 20px; font-size: 10px; font-weight: 700; }
-  @media print { body { padding: 0; } .no-print { display: none !important; } }
+  @media print { body { padding: 0; } .no-print { display: none !important; } * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } }
 </style>
 </head>
 <body>
@@ -11876,17 +11901,36 @@ function renderContasCrediario() {
 }
 
 function editarDataParcela(vendaId, parcIdx, dataAtual) {
-  var novaData = prompt('Nova data parcela '+(parcIdx+1)+' (AAAA-MM-DD):', dataAtual);
-  if (!novaData || novaData === dataAtual) return;
-  // Validar formato
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(novaData)) { showToast('Data inválida! Use o formato AAAA-MM-DD','error'); return; }
-  var vendas = load('vendas');
-  var vi = vendas.findIndex(v=>v.id===vendaId);
-  if (vi<0 || !vendas[vi].crediario) return;
-  vendas[vi].crediario.parcelas[parcIdx].data = novaData;
-  save('vendas', vendas);
-  renderContasCrediario();
-  showToast('✅ Data da parcela atualizada!', 'success');
+  // Criar input de data amigavel
+  var existing = document.getElementById('modal-editar-data-parcela');
+  if (existing) existing.remove();
+  var modal = document.createElement('div');
+  modal.id = 'modal-editar-data-parcela';
+  modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center';
+  var inner = document.createElement('div');
+  inner.style.cssText = 'background:white;border-radius:12px;padding:20px;max-width:320px;width:90%';
+  inner.innerHTML = '<div style="font-size:15px;font-weight:700;color:#0d2b4e;margin-bottom:12px">Editar Data da Parcela '+(parcIdx+1)+'</div>'
+    + '<input id="nova-data-parcela" type="date" value="'+dataAtual+'" style="width:100%;padding:10px;border:2px solid #0d2b4e;border-radius:8px;font-size:14px;margin-bottom:12px"/>'
+    + '<div style="display:flex;gap:8px">'
+    + '<button id="btn-salvar-data-parcela" style="flex:1;padding:10px;background:#0d2b4e;color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">Salvar</button>'
+    + '<button onclick="document.getElementById(\'modal-editar-data-parcela\').remove()" style="flex:1;padding:10px;background:#f1f5f9;color:#64748b;border:none;border-radius:8px;font-size:13px;cursor:pointer">Cancelar</button>'
+    + '</div>';
+  modal.appendChild(inner);
+  document.body.appendChild(modal);
+  document.getElementById('btn-salvar-data-parcela').onclick = function() {
+    var novaData = document.getElementById('nova-data-parcela').value;
+    modal.remove();
+    if (!novaData || novaData === dataAtual) return;
+    var vendas = load('vendas');
+    var vi = vendas.findIndex(function(v){ return v.id===vendaId; });
+    if (vi<0 || !vendas[vi].crediario) return;
+    vendas[vi].crediario.parcelas[parcIdx].data = novaData;
+    save('vendas', vendas);
+    renderContasCrediario();
+    showToast('Data da parcela atualizada!', 'success');
+  };
+  var novaData = dataAtual; // placeholder - real value set by modal
+  // Data editada via modal acima
 }
 
 function pagarParcelaCrediario(vendaId, parcIdx) {
