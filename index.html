@@ -4906,8 +4906,11 @@ function finalizarLogin(userObj, usuarios) {
               localStorage.setItem('otica_entradas', JSON.stringify(entradasCloud));
             }
             if (loadingEl) loadingEl.style.display = 'none';
+            // Renderizar dashboard com dados ja carregados
             showSection('dashboard');
             aplicarControleAcesso();
+            // Forcar re-render do modulo ativo
+            if (typeof renderDashboard === 'function') renderDashboard();
           }).catch(function() { if (loadingEl) loadingEl.style.display = 'none'; showSection('dashboard'); });
         }).catch(function() { if (loadingEl) loadingEl.style.display = 'none'; showSection('dashboard'); });
       }).catch(function() { if (loadingEl) loadingEl.style.display = 'none'; showSection('dashboard'); });
@@ -11183,6 +11186,9 @@ function registrarVendaUnif() {
         pertoOeEsf:parseFloat(rr.pertoOeEsf||0), pertoOeCil:parseFloat(rr.pertoOeCil||0),
         adicao:parseFloat(rr.adicao||0), dnp:parseFloat(rr.dnp||0),
         medico:rr.medico||'', receitaRef:rr.id||null,
+        tipoLente: rr.tipoLente || (rr.tipoProgressiva?'Progressiva':rr.tipoBifocalUltex?'Bifocal Ultex':rr.tipoBifocalKriptok?'Bifocal Kriptok':rr.tipoVisaoSimples?'Visao Simples':''),
+        tratamentos: [rr.tratAntiReflexo?'Anti-reflexo':'',rr.tratFotossensivel?'Fotossensivel':'',rr.tratBlueCut?'Blue Cut':'',rr.tratUV?'Protecao UV':''].filter(Boolean).join(', '),
+        pertoOdEixo:parseFloat(rr.pertoOdEixo||0), pertoOeEixo:parseFloat(rr.pertoOeEixo||0),
         obs:'OS de Montagem — Venda '+grupoVenda
       });
       save('os', osArr);
