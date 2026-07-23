@@ -2056,11 +2056,16 @@ function resetarSistema() {
 <meta content="Ótica Horizonte" name="apple-mobile-web-app-title"/>
 <meta content="#1e3a5f" name="theme-color"/>
 <script>
+// Remover todos os Service Workers antigos
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function() {
-    navigator.serviceWorker.register('./sw.js').then(function(reg) {
-      console.log('✅ Service Worker registrado:', reg.scope);
-    }).catch(function(e) { console.warn('SW error:', e); });
+  navigator.serviceWorker.getRegistrations().then(function(regs) {
+    regs.forEach(function(reg) { 
+      reg.unregister();
+      console.log('✅ SW removido:', reg.scope);
+    });
+  });
+  caches.keys().then(function(keys) {
+    keys.forEach(function(key) { caches.delete(key); });
   });
 }
 // Botão de instalação PWA
