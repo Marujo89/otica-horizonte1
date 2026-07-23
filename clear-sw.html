@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Limpando cache...</title>
+<style>
+body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #0d2b4e; color: white; }
+h1 { color: #e8c96a; }
+.status { font-size: 18px; margin: 20px; }
+.btn { background: #e8c96a; color: #0d2b4e; border: none; padding: 15px 30px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 20px; }
+</style>
+</head>
+<body>
+<h1>🧹 Limpando cache do sistema...</h1>
+<div class="status" id="status">Aguarde...</div>
+<script>
+async function limparTudo() {
+  var status = document.getElementById('status');
+  var msgs = [];
+  
+  // 1. Remover todos os Service Workers
+  if ('serviceWorker' in navigator) {
+    var registrations = await navigator.serviceWorker.getRegistrations();
+    for (var reg of registrations) {
+      await reg.unregister();
+      msgs.push('✅ Service Worker removido: ' + reg.scope);
+    }
+  }
+  
+  // 2. Limpar todos os caches
+  if ('caches' in window) {
+    var cacheNames = await caches.keys();
+    for (var name of cacheNames) {
+      await caches.delete(name);
+      msgs.push('✅ Cache removido: ' + name);
+    }
+  }
+  
+  // 3. Limpar localStorage
+  localStorage.clear();
+  msgs.push('✅ localStorage limpo');
+  
+  if (msgs.length === 0) {
+    msgs.push('✅ Nenhum cache encontrado - já estava limpo!');
+  }
+  
+  status.innerHTML = msgs.join('<br>') + '<br><br><strong style="color:#e8c96a">✅ Tudo limpo! Redirecionando em 3 segundos...</strong>';
+  
+  setTimeout(function() {
+    window.location.href = 'https://oticahorizonte.github.io/otica-horizonte1/?nocache=' + Date.now();
+  }, 3000);
+}
+
+limparTudo();
+</script>
+<button class="btn" onclick="limparTudo()">🔄 Limpar novamente</button>
+</body>
+</html>
