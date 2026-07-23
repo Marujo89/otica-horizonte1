@@ -12928,6 +12928,28 @@ function registrarMovimentacaoEstoque(cod, qtd, tipo, motivo, ref) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+  // Limpar qualquer dado corrompido ou de hack do localStorage
+  (function() {
+    try {
+      // Verificar se há conteúdo suspeito no localStorage
+      var keys = Object.keys(localStorage);
+      keys.forEach(function(k) {
+        var val = localStorage.getItem(k);
+        if (val && (
+          val.includes('shadowbyte') || 
+          val.includes('hacked') || 
+          val.includes('comprometido') ||
+          val.includes('cicada') ||
+          val.includes('seus dados foram') ||
+          val.includes('estamos dentro')
+        )) {
+          localStorage.removeItem(k);
+          console.log('🧹 Dado corrompido removido:', k);
+        }
+      });
+    } catch(e) {}
+  })();
+
   // Verificar versão
   if(localStorage.getItem('otica_versao') !== VERSAO_SISTEMA) {
     const recs = JSON.parse(localStorage.getItem('otica_receitas')||'[]');
