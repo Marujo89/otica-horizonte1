@@ -7132,7 +7132,7 @@ function viewOS(id) {
         <div style="font-size:12px;display:grid;gap:3px">
           <div><span style="color:#5a6a8a">Previsão:</span> <strong>${fmtDate(o.previsao)||'—'}</strong></div>
           ${o.entrega?`<div><span style="color:#5a6a8a">Entrega:</span> <strong style="color:#16a34a">${fmtDate(o.entrega)}</strong></div>`:''}
-          <div><span style="color:#5a6a8a">Técnico:</span> <strong>${o.tecnico||'—'}</strong></div>
+          <div><span style="color:#5a6a8a">${o.tipoOS==='montagem'?'Laboratório':'Técnico'}:</span> <strong>${o.tecnico||'—'}</strong></div>
           ${o.armacao&&o.armacao!=='—'?`<div><span style="color:#5a6a8a">Armação:</span> <strong>${o.armacao}</strong></div>`:''}
         </div>
       </div>
@@ -7304,28 +7304,31 @@ function toggleOsReceita() {
 function popularTiposOS() {
   var sel = document.getElementById('os-tipo');
   if (!sel) return;
-  var valorAtual = sel.value;
-  var fixas = ['Óculos de Grau — Montagem','Óculos Solar — Montagem','Lente de Contato',
-    'Conserto de Armação — Solda','Conserto de Armação — Parafuso','Conserto de Armação — Haste',
-    'Conserto de Armação — Plaqueta','Ajuste de Armação','Troca de Lente — Arranhada',
-    'Troca de Lente — Quebrada','Troca de Lente — Graduação','Adaptação de Lente','Outros'];
-  var servicosOS = []; // Serviço OS removido
-  var todasOpcoes = fixas.concat(servicosOS.map(function(s){ return s.desc; }));
-  sel.innerHTML = todasOpcoes.map(function(o){ return '<option value="'+o+'">'+o+'</option>'; }).join('');
-  if (valorAtual) sel.value = valorAtual;
+  // Tipos simplificados - fixos no HTML, não precisa popular dinamicamente
+  // Apenas garantir que o primeiro tipo de conserto seja selecionado por padrão
+  if (sel.value === '' || sel.value === 'Óculos de Grau — Montagem') {
+    // Manter o valor atual
+  }
 }
 
 function onChangeTipoOS() {
   var tipo = (document.getElementById('os-tipo')||{}).value||'';
   var isMontagem = tipo.toLowerCase().includes('montagem');
+  // Receita óptica: só para montagem
   var recBox = document.getElementById('os-receita-box');
   if (recBox) recBox.style.display = isMontagem ? 'block' : 'none';
+  // Seção receita toggle: só para montagem
+  var recToggle = recBox ? recBox.previousElementSibling : null;
+  // Valor: oculto para montagem (já cobrado na venda)
   var valGrp = document.getElementById('os-valor-group');
   if (valGrp) valGrp.style.display = isMontagem ? 'none' : '';
-  var descGrp = document.getElementById('os-descricao') ? document.getElementById('os-descricao').closest('.form-group') : null;
+  // Descrição do serviço: só para conserto
+  var descEl = document.getElementById('os-descricao');
+  var descGrp = descEl ? descEl.closest('.form-group') : null;
   if (descGrp) descGrp.style.display = isMontagem ? 'none' : '';
+  // Label técnico/laboratório
   var tecLabel = document.getElementById('os-tecnico-label');
-  if (tecLabel) tecLabel.textContent = isMontagem ? 'Laboratório' : 'Técnico Responsável';
+  if (tecLabel) tecLabel.textContent = isMontagem ? '🔬 Laboratório' : '🔧 Técnico Responsável';
 }
 
 function editOS(id) {
@@ -7346,7 +7349,7 @@ function editOS(id) {
   document.getElementById('os-tecnico').value = o.tecnico||'';
   // Atualizar label tecnico/laboratorio
   var tecLabel = document.getElementById('os-tecnico-label');
-  if (tecLabel) tecLabel.textContent = isMontagem ? 'Laboratório' : 'Técnico Responsável';
+  if (tecLabel) tecLabel.textContent = isMontagem ? '🔬 Laboratório' : '🔧 Técnico Responsável';
   document.getElementById('os-abertura').value = o.abertura||'';
   document.getElementById('os-previsao').value = o.previsao||'';
   document.getElementById('os-status').value = o.status||'Aberta';
@@ -7833,7 +7836,7 @@ function imprimirOS(id) {
     <div class="box-sub">Abertura: <strong>${fmtDate(o.abertura)}</strong></div>
     <div class="box-sub">Previsão: <strong>${fmtDate(o.previsao)}</strong></div>
     ${o.entrega?`<div class="box-sub">Entrega: <strong style="color:#16a34a">${fmtDate(o.entrega)}</strong></div>`:''}
-    <div class="box-sub">Técnico: <strong>${o.tecnico||'—'}</strong></div>
+    <div class="box-sub">${o.tipoOS==='montagem'?'Laboratório':'Técnico'}: <strong>${o.tecnico||'—'}</strong></div>
     <div class="box-sub">Status: <strong>${o.status}</strong></div>
   </div>
 </div>`;
@@ -9406,12 +9409,29 @@ function abrirWhatsAppOS(id) {
   if (!tel.startsWith('55')) tel = '55' + tel;
   
   var msg = '';
+  var nomeCliente = cli.nome.split(' ')[0];
+  var previsaoFmt = o.previsao ? new Date(o.previsao+'T12:00:00').toLocaleDateString('pt-BR') : '-';
   if (o.status === 'Aguardando Retirada' || o.status === 'Entregue') {
-    msg = 'Ola ' + cli.nome.split(' ')[0] + '! \n\nSua OS *' + o.id + '* esta pronta para retirada!\n\nServico: ' + o.tipo + '\n\nEstamos aguardando sua visita!\n\n_Otica Horizonte - Seu olhar, nosso compromisso._';
+    msg = 'Olá ' + nomeCliente + '! 😊\n\n' +
+          'Sua OS *#' + o.id + '* está pronta para retirada! 🎉\n\n' +
+          '🔧 Serviço: ' + o.tipo + '\n\n' +
+          'Estamos aguardando sua visita!\n\n' +
+          '_Ótica Horizonte — Seu olhar, nosso compromisso._ 🕶️';
   } else if (o.status === 'Em Producao' || o.status === 'Em Produção') {
-    msg = 'Ola ' + cli.nome.split(' ')[0] + '! \n\nSua OS *' + o.id + '* esta em producao.\n\nServico: ' + o.tipo + '\nPrevisao: ' + (o.previsao ? new Date(o.previsao+'T12:00:00').toLocaleDateString('pt-BR') : '-') + '\n\nAssim que ficar pronta, avisamos!\n\n_Otica Horizonte - Seu olhar, nosso compromisso._';
+    msg = 'Olá ' + nomeCliente + '! 😊\n\n' +
+          'Sua OS *#' + o.id + '* está em produção. ⚙️\n\n' +
+          '🔧 Serviço: ' + o.tipo + '\n' +
+          '📅 Previsão de entrega: *' + previsaoFmt + '*\n\n' +
+          'Assim que ficar pronta, avisamos!\n\n' +
+          '_Ótica Horizonte — Seu olhar, nosso compromisso._ 🕶️';
   } else {
-    msg = 'Ola ' + cli.nome.split(' ')[0] + '! \n\nSua OS *' + o.id + '* foi registrada.\n\nServico: ' + o.tipo + '\nStatus: ' + o.status + '\n\nQualquer duvida, estamos a disposicao!\n\n_Otica Horizonte - Seu olhar, nosso compromisso._';
+    msg = 'Olá ' + nomeCliente + '! 😊\n\n' +
+          'Sua OS *#' + o.id + '* foi registrada com sucesso! ✅\n\n' +
+          '🔧 Serviço: ' + o.tipo + '\n' +
+          '📋 Status: ' + o.status + '\n' +
+          '📅 Previsão: *' + previsaoFmt + '*\n\n' +
+          'Qualquer dúvida, estamos à disposição!\n\n' +
+          '_Ótica Horizonte — Seu olhar, nosso compromisso._ 🕶️';
   }
   
   window.open('https://wa.me/' + tel + '?text=' + encodeURIComponent(msg), '_blank');
@@ -12483,7 +12503,27 @@ function initOSModal() {
   document.getElementById('os-previsao').value = plus5;
   document.getElementById('os-idx').value = '';
   document.getElementById('modal-os-title').textContent = '🔧 Nova Ordem de Serviço';
-  popularTiposOS();
+  // Resetar tipo para conserto (padrão)
+  var tipoEl = document.getElementById('os-tipo');
+  if (tipoEl) tipoEl.value = '🔧 Conserto de Armação';
+  // Limpar campos
+  var descEl = document.getElementById('os-descricao');
+  if (descEl) descEl.value = '';
+  var obsEl = document.getElementById('os-obs');
+  if (obsEl) obsEl.value = '';
+  var armEl = document.getElementById('os-armacao');
+  if (armEl) armEl.value = '';
+  var valEl = document.getElementById('os-valor');
+  if (valEl) valEl.value = '';
+  var tecEl = document.getElementById('os-tecnico');
+  if (tecEl) tecEl.value = '';
+  // Limpar busca de cliente
+  var buscaEl = document.getElementById('os-cliente-busca');
+  if (buscaEl) buscaEl.value = '';
+  var hiddenEl = document.getElementById('os-cliente');
+  if (hiddenEl) hiddenEl.value = '';
+  // Atualizar campos conforme tipo selecionado
+  onChangeTipoOS();
 }
 
 // Override openModal buttons — executar após DOM carregar
