@@ -3316,7 +3316,7 @@ function instalarApp() {
 <select id="prod-cat" onchange="onChangeProdCat()">
 <option>Armação</option><option>Lente</option><option>Solar</option>
 <option>Acessório</option><option>Contato</option><option>Serviço</option>
-<option>Serviço OS</option>
+
 </select>
 </div>
 <div class="form-group" style="grid-column:1/-1">
@@ -3699,18 +3699,10 @@ function instalarApp() {
 <label>Tipo de Serviço *</label>
 <select id="os-tipo" onchange="onChangeTipoOS()">
 <option>Óculos de Grau — Montagem</option>
-<option>Óculos Solar — Montagem</option>
-<option>Lente de Contato</option>
-<option>Conserto de Armação — Solda</option>
-<option>Conserto de Armação — Parafuso</option>
-<option>Conserto de Armação — Haste</option>
-<option>Conserto de Armação — Plaqueta</option>
-<option>Ajuste de Armação</option>
-<option>Troca de Lente — Arranhada</option>
-<option>Troca de Lente — Quebrada</option>
-<option>Troca de Lente — Graduação</option>
-<option>Adaptação de Lente</option>
-<option>Outros</option>
+<option>🔧 Conserto de Armação</option>
+<option>🔍 Troca de Lente</option>
+<option>⚙️ Ajuste/Regulagem</option>
+<option>📦 Outro</option>
 </select>
 </div>
 
@@ -6430,7 +6422,7 @@ function visualizarProduto(cod) {
 function onChangeProdCat() {
   var cat = (document.getElementById('prod-cat')||{}).value||'';
   var isServico = cat === 'Serviço';
-  var isServicoOS = cat === 'Serviço OS';
+  var isServicoOS = false; // Serviço OS removido
   var isAnyServico = isServico || isServicoOS;
   // Campos que nao fazem sentido para servicos
   var camposOcultar = isServicoOS
@@ -7317,7 +7309,7 @@ function popularTiposOS() {
     'Conserto de Armação — Solda','Conserto de Armação — Parafuso','Conserto de Armação — Haste',
     'Conserto de Armação — Plaqueta','Ajuste de Armação','Troca de Lente — Arranhada',
     'Troca de Lente — Quebrada','Troca de Lente — Graduação','Adaptação de Lente','Outros'];
-  var servicosOS = load('produtos').filter(function(p){ return p.cat==='Serviço OS'; });
+  var servicosOS = []; // Serviço OS removido
   var todasOpcoes = fixas.concat(servicosOS.map(function(s){ return s.desc; }));
   sel.innerHTML = todasOpcoes.map(function(o){ return '<option value="'+o+'">'+o+'</option>'; }).join('');
   if (valorAtual) sel.value = valorAtual;
@@ -11630,7 +11622,7 @@ function filtrarEstoqueBusca(tipo) {
   else if (tipo==='len') filtrados = produtos.filter(p=>(p.cat==='Lente'||p.cat==='Contato')&&p.qtd>0&&(!q||(p.desc+p.cod+p.marca).toLowerCase().includes(q)));
   else {
     filtrados = produtos.filter(p=>{
-      if (p.cat==='Serviço OS') return false; // Exclusivo para OS
+      // Serviço OS removido
       return !q||(p.desc+p.cod+p.cat+(p.marca||'')).toLowerCase().includes(q);
     });
     // Ordenar: Servicos primeiro se busca vazia
